@@ -62,7 +62,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             // Optional: still alert on failure? User seemed to want stealth, but errors might still be useful.
             // Let's keep error alert but remove success overlay.
             console.log("AI could not identify the answer.");
-            alert("AI가 정답을 찾지 못했습니다. 다시 시도해 주세요.");
+            alert("The AI could not identify the answer. Please try again.");
         }
     }
     else if (request.action === 'error') {
@@ -72,7 +72,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             status.style.display = 'block';
             setTimeout(() => status.style.display = 'none', 5000);
         } else {
-            alert("오류 발생: " + request.message);
+            alert("Error: " + request.message);
         }
     }
 });

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Kahoot AI Solver - Smart Assistant",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "A smart assistant that analyzes Kahoot quizzes in real-time using AI.",
     "author": "Junsu",
     "icons": {
@@ -13,6 +13,10 @@
         "activeTab",
         "scripting",
         "storage"
+    ],
+    "host_permissions": [
+        "https://generativelanguage.googleapis.com/*",
+        "https://api.openai.com/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -34,29 +38,29 @@
         }
     ],
     "commands": {
-        "solve-question": {
+        "solve-slot-1": {
             "suggested_key": {
                 "default": "Alt+Z",
                 "mac": "Alt+Z",
                 "windows": "Alt+Z"
             },
-            "description": "Solve with Gemini Flash"
+            "description": "Solve with model slot 1"
         },
-        "solve-question-pro": {
+        "solve-slot-2": {
             "suggested_key": {
                 "default": "Alt+X",
                 "mac": "Alt+X",
                 "windows": "Alt+X"
             },
-            "description": "Solve with Gemini Pro"
+            "description": "Solve with model slot 2"
         },
-        "solve-question-gpt": {
+        "solve-slot-3": {
             "suggested_key": {
                 "default": "Alt+C",
                 "mac": "Alt+C",
                 "windows": "Alt+C"
             },
-            "description": "Solve with GPT-5.2"
+            "description": "Solve with model slot 3"
         }
     }
 }

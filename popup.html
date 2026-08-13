@@ -6,7 +6,7 @@
   <title>Youtube Ad Blocker Settings</title>
   <style>
     body {
-      width: 300px;
+      width: 320px;
       padding: 15px;
       font-family: sans-serif;
     }
@@ -26,12 +26,14 @@
       font-size: 12px;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    select {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
+      background: white;
     }
 
     button {
@@ -48,12 +50,33 @@
       background-color: #357ae8;
     }
 
+    .slot-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .slot-row button {
+      width: 90px;
+      flex: none;
+      background-color: #34a853;
+      font-size: 12px;
+    }
+
     #status {
       margin-top: 10px;
       font-size: 12px;
       color: green;
       text-align: center;
       display: none;
+    }
+
+    #modelStatus {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #888;
+      text-align: center;
     }
   </style>
 </head>
@@ -91,11 +114,25 @@
       <label for="openaiApiKey">OpenAI API Key:</label>
       <input type="text" id="openaiApiKey" placeholder="Enter your OpenAI API Key">
     </div>
-    <button id="saveBtn" style="margin-bottom: 10px;">Save Settings</button>
+    <button id="saveBtn" style="margin-bottom: 10px;">Save Keys &amp; Reload Models</button>
     <hr>
-    <button id="solveBtn" style="background-color: #34a853; margin-top: 5px;">⚡ Gemini 3 Flash</button>
-    <button id="solveProBtn" style="background-color: #9334a8; margin-top: 5px;">🧠 Gemini 3 Pro</button>
-    <button id="solveGptBtn" style="background-color: #10a37f; margin-top: 5px;">🤖 ChatGPT 5.2</button>
+
+    <label>Model slots (loaded live from your API keys):</label>
+    <div class="slot-row">
+      <button id="solveSlot1">⚡ Alt+Z</button>
+      <select id="slot1"></select>
+    </div>
+    <div class="slot-row">
+      <button id="solveSlot2" style="background-color: #9334a8;">🧠 Alt+X</button>
+      <select id="slot2"></select>
+    </div>
+    <div class="slot-row">
+      <button id="solveSlot3" style="background-color: #10a37f;">🤖 Alt+C</button>
+      <select id="slot3"></select>
+    </div>
+
+    <button id="refreshBtn" style="background-color: #666; margin-top: 8px;">🔄 Refresh model list</button>
+    <div id="modelStatus"></div>
     <div id="status">Settings saved!</div>
   </div>
 
