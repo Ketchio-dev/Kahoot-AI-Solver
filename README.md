@@ -22,7 +22,7 @@ git clone https://github.com/Ketchio-dev/Kahoot-AI-Solver.git
 
 ## Setup
 
-1. Click the extension icon, then the ⚙️ button in the top-right corner to reveal the settings view.
+1. Click the extension icon, then the `···` button in the top-right corner to reveal the settings view.
 2. Paste a **Gemini API key**, an **OpenAI API key**, or both, and click **Save Keys & Reload Models**.
 3. The three dropdowns fill with every model your keys can actually reach, fetched live at that moment.
 4. Assign a model to each slot. Your choice is stored locally and used by the matching shortcut.

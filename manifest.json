@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Kahoot AI Solver - Smart Assistant",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "A smart assistant that analyzes Kahoot quizzes in real-time using AI.",
     "author": "Junsu",
     "icons": {
