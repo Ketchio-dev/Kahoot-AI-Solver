@@ -29,6 +29,18 @@ async function fetchGeminiModels(apiKey) {
     return models;
 }
 
+// The OpenAI model list carries no modality metadata, so models that cannot
+// possibly accept an image on /v1/chat/completions are filtered out by id.
+const OPENAI_NON_CHAT_PATTERNS = [
+    /whisper/, /^tts-/, /^dall-e/, /embedding/, /moderation/, /^omni-moderation/,
+    /^text-(davinci|curie|babbage|ada)/, /^davinci/, /^babbage/, /^codex-mini/,
+    /audio/, /realtime/, /transcribe/, /^sora/, /image/, /^gpt-3\.5/
+];
+
+function isLikelyVisionChatModel(id) {
+    return !OPENAI_NON_CHAT_PATTERNS.some((pattern) => pattern.test(id));
+}
+
 async function fetchOpenAIModels(apiKey) {
     const response = await fetch(OPENAI_MODELS_URL, {
         headers: { 'Authorization': `Bearer ${apiKey}` }
@@ -37,11 +49,13 @@ async function fetchOpenAIModels(apiKey) {
         throw new Error(`OpenAI model list failed: ${response.status} - ${await response.text()}`);
     }
     const data = await response.json();
-    return (data.data || []).map((model) => ({
-        provider: 'openai',
-        id: model.id,
-        label: model.id
-    }));
+    return (data.data || [])
+        .filter((model) => isLikelyVisionChatModel(model.id))
+        .map((model) => ({
+            provider: 'openai',
+            id: model.id,
+            label: model.id
+        }));
 }
 
 // Returns every model reachable with the keys currently stored, sorted by id.

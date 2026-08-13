@@ -6,6 +6,16 @@ async function getKeys() {
     return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey']);
 }
 
+// The content script is absent on restricted pages; a failed notify must not
+// mask the underlying result or error.
+async function notifyTab(tabId, message) {
+    try {
+        await chrome.tabs.sendMessage(tabId, message);
+    } catch (e) {
+        console.log('Could not reach content script:', e.message);
+    }
+}
+
 // Resolves the model assigned to a slot. If nothing has been picked yet,
 // the first model the provider APIs currently return is used.
 async function resolveSlotModel(slot) {
@@ -22,31 +32,41 @@ async function resolveSlotModel(slot) {
     return fallback;
 }
 
+// On pages loaded before the extension, the content script has to be injected
+// on demand before it can receive any message.
+async function startProcessingIndicator(tabId) {
+    try {
+        await chrome.tabs.sendMessage(tabId, { action: "show_processing" });
+    } catch (e) {
+        console.log("Content script not ready, injecting...", e.message);
+        await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+        await chrome.scripting.insertCSS({ target: { tabId }, files: ['styles.css'] });
+        await notifyTab(tabId, { action: "show_processing" });
+    }
+}
+
+// Guards against a held-down shortcut firing several paid API calls at once.
+let solveInFlight = false;
+
 const solveQuestion = async (slot) => {
+    if (solveInFlight) {
+        console.log('A solve is already running, ignoring this trigger.');
+        return;
+    }
+
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return;
 
+    solveInFlight = true;
     try {
-        await chrome.tabs.sendMessage(tab.id, { action: "show_processing" });
-    } catch (e) {
-        console.log("Content script not ready, injecting...", e);
-        try {
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
-            await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] });
-            setTimeout(() => chrome.tabs.sendMessage(tab.id, { action: "show_processing" }), 100);
-        } catch (injectionError) {
-            console.error("Failed to inject", injectionError);
-            return;
-        }
-    }
+        await startProcessingIndicator(tab.id);
 
-    try {
         const model = await resolveSlotModel(slot);
         const keys = await getKeys();
         const apiKey = model.provider === 'openai' ? keys.openaiApiKey : keys.geminiApiKey;
 
         if (!apiKey) {
-            chrome.tabs.sendMessage(tab.id, { action: "error", message: `Set the ${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key first.` });
+            await notifyTab(tab.id, { action: "error", message: `Set the ${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key first.` });
             return;
         }
 
@@ -59,12 +79,15 @@ const solveQuestion = async (slot) => {
             : await analyzeImage(apiKey, base64Image, model.id);
 
         console.log(`Final Decision: ${finalAnswer} via ${model.provider}/${model.id}`);
+        await notifyTab(tab.id, { action: "highlight_answer", answer: finalAnswer });
         updateIcon(finalAnswer);
     } catch (error) {
         console.error("Error processing:", error);
-        chrome.tabs.sendMessage(tab.id, { action: "error", message: error.message });
+        await notifyTab(tab.id, { action: "error", message: error.message });
         chrome.action.setIcon({ imageData: drawIcon('#FF0000') });
-        setTimeout(() => chrome.action.setIcon({ imageData: drawIcon('#FFFFFF') }), 1000);
+        setTimeout(() => chrome.action.setIcon({ imageData: drawIcon('#000000') }), 1000);
+    } finally {
+        solveInFlight = false;
     }
 };
 

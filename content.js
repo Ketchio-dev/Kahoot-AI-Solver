@@ -1,78 +1,70 @@
-// Cursor SVGs removed for stealth mode (Pixel strategy)
+// All on-page feedback is deliberately small and corner-anchored so it stays
+// unobtrusive on a shared screen.
 
-// Helper to show stealth visible indicator
-const highlightAnswer = (color) => {
-    console.log("Kahoot AI (Stealth): Showing indicator for:", color);
-
-    // Remove previous indicators
-    const existingInd = document.getElementById('kahoot-stealth-indicator');
-    if (existingInd) existingInd.remove();
-
-    const c = color.toLowerCase().trim();
-    let displayIcon = '?';
-    // Use muted/darker colors for stealth, or just white on dark bg.
-    // Let's use the actual color but small.
-    let displayColor = '#333';
-
-    if (c.includes('red') || c.includes('triangle')) {
-        displayColor = '#C0392B'; // Darker Red
-        displayIcon = '▲';
-    }
-    else if (c.includes('blue') || c.includes('diamond')) {
-        displayColor = '#2980B9'; // Darker Blue
-        displayIcon = '◆';
-    }
-    else if (c.includes('yellow') || c.includes('circle')) {
-        displayColor = '#F1C40F'; // Gold/Yellow
-        displayIcon = '●';
-    }
-    else if (c.includes('green') || c.includes('square')) {
-        displayColor = '#27AE60'; // Darker Green
-        displayIcon = '■';
-    }
-
-    // Create a small corner indicator
-    const indicator = document.createElement('div');
-    indicator.id = 'kahoot-stealth-indicator';
-    indicator.className = 'kahoot-stealth-indicator';
-    indicator.style.backgroundColor = displayColor; // Optional: background color matches answer
-    // OR keep background dark and make text color match? 
-    // Let's stick to colored background for quick recognition.
-
-    indicator.innerHTML = displayIcon;
-
-    document.body.appendChild(indicator);
-
-    // Auto-remove after 0.5 seconds (Flash mode)
-    setTimeout(() => {
-        if (indicator) indicator.remove();
-    }, 500);
+const ANSWER_STYLES = {
+    red: { color: '#C0392B', icon: '▲' },
+    triangle: { color: '#C0392B', icon: '▲' },
+    blue: { color: '#2980B9', icon: '◆' },
+    diamond: { color: '#2980B9', icon: '◆' },
+    yellow: { color: '#F1C40F', icon: '●' },
+    circle: { color: '#F1C40F', icon: '●' },
+    green: { color: '#27AE60', icon: '■' },
+    square: { color: '#27AE60', icon: '■' }
 };
 
-// Initial listener
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+const INDICATOR_ID = 'kahoot-stealth-indicator';
+
+function removeIndicator() {
+    const existing = document.getElementById(INDICATOR_ID);
+    if (existing) existing.remove();
+}
+
+function createIndicator() {
+    removeIndicator();
+    const indicator = document.createElement('div');
+    indicator.id = INDICATOR_ID;
+    indicator.className = 'kahoot-stealth-indicator';
+    document.body.appendChild(indicator);
+    return indicator;
+}
+
+function showProcessing() {
+    const indicator = createIndicator();
+    indicator.classList.add('kahoot-stealth-indicator--pending');
+    indicator.textContent = '';
+}
+
+function showAnswer(answer) {
+    const key = Object.keys(ANSWER_STYLES).find((k) => answer.toLowerCase().includes(k));
+    const style = key ? ANSWER_STYLES[key] : { color: '#333333', icon: '?' };
+
+    const indicator = createIndicator();
+    indicator.style.backgroundColor = style.color;
+    indicator.textContent = style.icon;
+
+    setTimeout(removeIndicator, 2500);
+}
+
+function showError(message) {
+    console.warn('Kahoot AI error:', message);
+    const indicator = createIndicator();
+    indicator.style.backgroundColor = '#000000';
+    indicator.textContent = '!';
+    indicator.title = message;
+
+    setTimeout(removeIndicator, 4000);
+}
+
+chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'show_processing') {
-        // User requested no visual "AI is thinking" status
-    }
-    else if (request.action === 'highlight_answer') {
-        // User requested no text overlay for answer
+        showProcessing();
+    } else if (request.action === 'highlight_answer') {
         if (request.answer) {
-            highlightAnswer(request.answer);
+            showAnswer(request.answer);
         } else {
-            // Optional: still alert on failure? User seemed to want stealth, but errors might still be useful.
-            // Let's keep error alert but remove success overlay.
-            console.log("AI could not identify the answer.");
-            alert("The AI could not identify the answer. Please try again.");
+            showError('The AI could not identify the answer.');
         }
-    }
-    else if (request.action === 'error') {
-        const status = document.getElementById('kahoot-ai-status');
-        if (status) {
-            status.innerText = 'Error: ' + request.message;
-            status.style.display = 'block';
-            setTimeout(() => status.style.display = 'none', 5000);
-        } else {
-            alert("Error: " + request.message);
-        }
+    } else if (request.action === 'error') {
+        showError(request.message);
     }
 });

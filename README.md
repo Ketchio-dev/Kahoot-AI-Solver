@@ -39,23 +39,25 @@ Get keys from [Google AI Studio](https://aistudio.google.com/apikey) and the [Op
 
 You can also press the buttons next to each dropdown in the popup.
 
-The answer is reported through the extension icon, which briefly turns the color of the correct option:
+While a request is running, a faint dot pulses in the bottom-right corner. When the answer arrives, that dot turns into the shape and color of the correct option for a couple of seconds, and the extension icon flashes the same color:
 
-| Color | Kahoot shape |
-| --- | --- |
-| Red | Triangle |
-| Blue | Diamond |
-| Yellow | Circle |
-| Green | Square |
+| Color | Kahoot shape | Indicator |
+| --- | --- | --- |
+| Red | Triangle | ▲ |
+| Blue | Diamond | ◆ |
+| Yellow | Circle | ● |
+| Green | Square | ■ |
 
-Nothing is drawn over the page, so the answer stays off any shared screen or recording.
+Errors surface as a black `!` dot in the same corner rather than a popup dialog, with the message in its tooltip and the browser console. The indicator is 14px and click-through, so it never blocks the page.
+
+Holding a shortcut down will not stack requests: while one solve is in flight, further triggers are ignored so you are not billed for duplicate calls.
 
 ## How live model loading works
 
 `models.js` calls:
 
 - `GET https://generativelanguage.googleapis.com/v1beta/models` — paginated, keeping only models that advertise `generateContent`
-- `GET https://api.openai.com/v1/models`
+- `GET https://api.openai.com/v1/models` — the response carries no modality metadata, so speech, image-generation, embedding, moderation and legacy completion models are filtered out by id pattern
 
 Results are merged into a single provider-tagged list. If a slot has no saved selection, the first available model is used automatically, so a new install works as soon as a key is saved. Nothing is cached between popup openings — hitting **Refresh model list** always re-queries the APIs, so newly released models appear without an extension update.
 
@@ -66,7 +68,7 @@ Results are merged into a single provider-tagged list. If a slot has no saved se
 | `models.js` | Live model discovery for both providers |
 | `background.js` | Service worker: screenshot capture, model calls, icon feedback |
 | `popup.html` / `popup.js` | Settings UI, key storage, slot assignment |
-| `content.js` / `styles.css` | Page-side indicator and error surface |
+| `content.js` / `styles.css` | Corner indicator for pending, answer and error states |
 | `manifest.json` | MV3 manifest, permissions, shortcuts |
 
 ## Privacy
