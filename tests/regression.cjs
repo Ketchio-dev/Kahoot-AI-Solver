@@ -48,6 +48,29 @@ test('popup persists settings before a permission prompt can destroy it', async 
   assert.equal(saved.openaiApiKey, 'test-key');
 });
 
+test('structured answers validate multiple, typed, ordered, numeric and unknown results', () => {
+  const ctx = context();
+  for (const result of [
+    { type: 'multiple', colors: ['red', 'green'] },
+    { type: 'text', text: 'Paris' },
+    { type: 'order', items: ['2', '4', '6'] },
+    { type: 'number', value: 42 },
+    { type: 'unknown', message: 'Question not visible' }
+  ]) {
+    assert.equal(JSON.stringify(vm.runInContext(`parseResponse(${JSON.stringify(JSON.stringify(result))})`, ctx)), JSON.stringify(result));
+  }
+  for (const result of [{ type: 'multiple', colors: ['purple'] }, { type: 'multiple', colors: ['red', 'red'] }, { type: 'text', text: '' }, { type: 'order', items: ['one'] }, { type: 'number', value: '42' }]) {
+    assert.throws(() => vm.runInContext(`parseResponse(${JSON.stringify(JSON.stringify(result))})`, ctx));
+  }
+});
+
+test('media context is attached only to the current prompt and validates length', () => {
+  const ctx = context();
+  assert.ok(vm.runInContext('buildPrompt("Narrator said Paris")', ctx).includes('Narrator said Paris'));
+  assert.ok(!vm.runInContext('buildPrompt()', ctx).includes('Narrator said Paris'));
+  assert.throws(() => vm.runInContext('buildPrompt("x".repeat(6001))', ctx));
+});
+
 test('unset slots require user selection without fetching or assigning a model', async () => {
   const ctx = context({ fetch: () => { throw new Error('Unexpected model request'); } });
   await assert.rejects(vm.runInContext('resolveSlotModel("slot1")', ctx), /Select a model/);
@@ -137,4 +160,10 @@ test('old result timers are cancelled when a new indicator is displayed', () => 
   listener({ action: 'show_processing' });
   assert.ok(cancelled.includes(123));
   assert.equal(current.textContent, '');
+  listener({ action: 'highlight_answer', mode: 'normal', answer: { type: 'order', items: ['2', '4'] } });
+  assert.equal(current.className, 'kahoot-normal-panel');
+  assert.equal(current.textContent, '1. 2\n2. 4');
+  listener({ action: 'highlight_answer', mode: 'stealth', answer: { type: 'text', text: '<script>unsafe</script>' } });
+  assert.equal(current.className, 'kahoot-stealth-indicator');
+  assert.equal(current.textContent, '<script>unsafe</script>');
 });

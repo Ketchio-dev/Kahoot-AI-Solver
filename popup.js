@@ -10,10 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('status');
   const modelStatus = document.getElementById('modelStatus');
 
-  chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl'], (result) => {
+  chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl', 'displayMode'], (result) => {
     if (result.geminiApiKey) apiKeyInput.value = result.geminiApiKey;
     if (result.openaiApiKey) openaiInput.value = result.openaiApiKey;
     baseUrlInput.value = result.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
+    document.getElementById('displayMode').value = result.displayMode === 'stealth' ? 'stealth' : 'normal';
     loadModels();
   });
 
@@ -118,11 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  document.getElementById('displayMode').addEventListener('change', async (event) => {
+    await chrome.storage.local.set({ displayMode: event.target.value });
+  });
+
   refreshBtn.addEventListener('click', loadModels);
 
   SLOTS.forEach((slot, index) => {
     document.getElementById(`solveSlot${index + 1}`).addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'manual_solve', slot });
+      chrome.runtime.sendMessage({ action: 'manual_solve', slot, mediaContext: document.getElementById('mediaContext').value.trim() });
       window.close();
     });
   });

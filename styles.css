@@ -22,6 +22,38 @@
   transition: opacity 0.3s ease;
 }
 
+.kahoot-normal-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  max-width: 360px;
+  max-height: 50vh;
+  overflow: auto;
+  padding: 18px 22px;
+  border-radius: 12px;
+  background: #243047;
+  color: #fff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .25);
+  font: 600 18px/1.5 sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  z-index: 2147483647 !important;
+}
+
+.kahoot-stealth-detail {
+  width: auto;
+  height: auto;
+  max-width: 230px;
+  max-height: 40vh;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 .kahoot-stealth-indicator--pending {
   animation: kahoot-pending-pulse 1s ease-in-out infinite;
 }

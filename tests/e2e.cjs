@@ -32,6 +32,7 @@ await popup.locator('#slot1').selectOption('openai:oc/fledge-alpha-free');
 await popup.locator('#refreshBtn').click();await popup.locator('#modelStatus').filter({hasText:/models available/}).waitFor();
 if(await popup.locator('#slot1').inputValue()!=='openai:oc/fledge-alpha-free')throw new Error('Refresh changed user selection');
 await popup.locator('#slot1').selectOption('openai:oc/space-bunny-free');
+await popup.locator('#displayMode').selectOption('stealth');
 console.log('User model switch and refresh persistence PASS');
 console.log('Persisted selection',await worker.evaluate(async()=>{const s=await chrome.storage.local.get(['slot1','openaiBaseUrl','openaiApiKey']);return {slot1:s.slot1,baseUrl:s.openaiBaseUrl,keySaved:!!s.openaiApiKey};}));
 await quiz.bringToFront();
@@ -52,10 +53,35 @@ await quiz.screenshot({path:path.join(artifacts,'geography-before.png')});
 await worker.evaluate(()=>solveQuestion('slot1'));
 if(await quiz.locator('#kahoot-stealth-indicator').textContent()!=='▲')throw new Error('Geography expected red');
 console.log('Geography PASS');
+// Switch using the settings UI, then exercise richer answers in normal mode.
+const settings=await ctx.newPage();await settings.goto(`chrome-extension://${id}/popup.html`);
+await settings.locator('#toggleViewBtn').click();await settings.locator('#displayMode').selectOption('normal');
+await settings.close();await quiz.bringToFront();
+const cases=[
+  {question:'Select ALL prime numbers. Multiple correct answers.',options:['2','4','3','6'],expected:['▲','●']},
+  {question:'Type the answer: What is the capital of France?',options:['Type your answer','','',''],expected:['Paris']},
+  {question:'Puzzle: Arrange these numbers in ascending order.',options:['8','2','6','4'],expected:['1. 2','2. 4','3. 6','4. 8']},
+  {question:'Slider: How many minutes are in one hour? Return a number.',options:['0 to 120','','',''],expected:['60']}
+];
+for(const item of cases){
+ await quiz.evaluate(item=>{document.querySelector('h1').textContent=item.question;document.querySelectorAll('.option').forEach((e,i)=>e.textContent=item.options[i]);},item);
+ await quiz.screenshot({path:path.join(artifacts,`before-${cases.indexOf(item)}.png`)});
+ await worker.evaluate(()=>solveQuestion('slot1'));
+ const panel=quiz.locator('#kahoot-stealth-indicator');const text=await panel.textContent();
+ for(const expected of item.expected)if(!text.includes(expected))throw new Error(`Expected ${expected}, received ${text}`);
+ if(!await panel.evaluate(e=>e.classList.contains('kahoot-normal-panel')))throw new Error('Normal mode not applied');
+ console.log('Extended type PASS:',item.question,text);
+ await quiz.screenshot({path:path.join(artifacts,`answer-${cases.indexOf(item)}.png`)});
+}
+await quiz.evaluate(()=>{document.querySelector('h1').textContent='Audio question: Which city did the narrator visit?';document.querySelectorAll('.option').forEach((e,i)=>e.textContent=['Paris','London','Berlin','Rome'][i]);});
+await quiz.screenshot({path:path.join(artifacts,'audio-context-before.png')});
+await worker.evaluate(()=>solveQuestion('slot1','Transcript: Yesterday I visited London and saw Big Ben.'));
+if(!(await quiz.locator('#kahoot-stealth-indicator').textContent()).includes('BLUE'))throw new Error('Transcript context was not used');
+console.log('Transcript-assisted question PASS');
 console.log('Indicator evidence',await quiz.evaluate(()=>window.e2eEvents));
 await quiz.screenshot({path:path.join(artifacts,'result.png')});
-if(await quiz.locator('#kahoot-stealth-indicator').textContent()!=='▲')throw new Error('Expected red triangle answer');
-console.log('E2E PASS: explicit model selection, refresh, switch, capture, three real API answers. Artifacts:',artifacts);
+if(!(await quiz.locator('#kahoot-stealth-indicator').textContent()).includes('BLUE'))throw new Error('Expected transcript-assisted blue answer');
+console.log('E2E PASS: explicit model selection, refresh, switch, capture, eight real API answers including transcript context across both display modes. Artifacts:',artifacts);
 console.log('Pages',ctx.pages().map(p=>p.url()));
 await quiz.screenshot({path:path.join(artifacts,'quiz.png')});
 

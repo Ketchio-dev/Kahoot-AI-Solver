@@ -138,6 +138,16 @@
     <button id="saveBtn" style="margin-bottom: 10px;">Save Keys &amp; Reload Models</button>
     <hr>
 
+    <div class="form-group">
+      <label for="displayMode">Answer display</label>
+      <select id="displayMode"><option value="normal">Normal · readable answer panel</option><option value="stealth">Stealth · compact corner indicator</option></select>
+      <small>Stealth is compact, not invisible in screenshots or screen sharing.</small>
+    </div>
+    <div class="form-group">
+      <label for="mediaContext">Audio/video context · optional</label>
+      <textarea id="mediaContext" maxlength="6000" rows="3" placeholder="Paste a transcript, captions, or what happened in the clip." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
+      <small>Sent with the screenshot only when you click a solve button. Not saved. Shortcuts use the screenshot alone. No audio is recorded.</small>
+    </div>
     <label>Model slots (loaded live from your API keys):</label>
     <div class="slot-row">
       <button id="solveSlot1">Alt+Z</button>

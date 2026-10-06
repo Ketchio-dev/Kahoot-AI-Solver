@@ -41,7 +41,11 @@ Get keys from [Google AI Studio](https://aistudio.google.com/apikey) and the [Op
 
 You can also press the buttons next to each dropdown in the popup.
 
-While a request is running, a faint dot pulses in the bottom-right corner. When the answer arrives, that dot turns into the shape and color of the correct option for a couple of seconds, and the extension icon flashes the same color:
+Choose **Normal** or **Stealth** in the settings' Answer display dropdown. Normal (the default) shows a readable answer panel for 15 seconds. Stealth uses a small corner shape for single-choice answers and a compact text box for richer answers (8 seconds). Compact does not mean invisible: both modes can appear in screenshots or screen sharing. Neither mode clicks or submits answers.
+
+Supported answer formats now include single-color options (including visible true/false options), multiple correct colors, typed text, ordered option labels for puzzles, and numeric answers for sliders. If the question, audio/video content or required context is missing, the model is instructed to report that it cannot determine an answer. Surveys and personal preferences are not factual questions to solve. These are screenshot-based suggestions, not guaranteed coverage of every Kahoot format or correct answers.
+
+In Stealth mode, while a request is running, a faint dot pulses in the bottom-right corner. When the answer arrives, that dot turns into the shape and color of the correct option for eight seconds, and the extension icon flashes the same color:
 
 | Color | Kahoot shape | Indicator |
 | --- | --- | --- |
@@ -50,9 +54,15 @@ While a request is running, a faint dot pulses in the bottom-right corner. When 
 | Yellow | Circle | ● |
 | Green | Square | ■ |
 
-Errors surface as a black `!` dot in the same corner rather than a popup dialog, with the message in the browser console. The indicator is 14px and click-through, so it never blocks the page.
+In Stealth mode, errors surface as a black `!` dot; Normal mode shows the error message in its panel. Errors are also logged to the browser console. The compact single-answer indicator is 14px and click-through.
 
 Holding a shortcut down will not stack requests: while one solve is in flight, further triggers are ignored so you are not billed for duplicate calls.
+
+## Audio and video questions
+
+The extension does **not** currently record sound or upload video. In settings, paste a transcript, captions or observations into **Audio/video context**, then click the desired solve button. That text is sent with the screenshot, is not saved to disk/storage, and is discarded when the popup closes. Keyboard shortcuts do not include this context. Do not paste sensitive material you do not want sent to the selected provider.
+
+Direct media support requires more than a model capability flag: the chosen server must also accept the exact audio/video request format. A future explicit tab-recording flow should capture tab audio (not the microphone) with a visible recording indicator, provide stop/cancel controls, and use transcription plus sampled video frames or a verified native multimodal endpoint. Missing media content should not be guessed.
 
 ## How live model loading works
 
@@ -85,7 +95,7 @@ node --test tests/regression.cjs
 
 The regression tests cover response validation, custom API routing and model filtering, concurrent solve protection, and indicator timer cleanup. They do not replace testing the unpacked extension in Chrome.
 
-`tests/e2e.cjs` creates a local Kahoot-style quiz and tests model discovery, explicit selection, refresh persistence, model switching, screenshot capture, real API calls and answer indicators for arithmetic, science and geography. Install `playwright-core` in your test environment and run with `E2E_API_KEY` and `E2E_CHROME_PATH` (an extension-capable Chrome for Testing binary). It uses the test API at `http://100.81.152.90:20128/v1`. Credentials are supplied only by environment variable and temporary profiles are removed afterward. The test pre-grants permissions in a temporary extension copy and invokes the solve entry point directly. Native permission approval, reopening the popup with saved settings, the popup solve button and Option+Z have also been manually exercised in Chrome for Testing on macOS.
+`tests/e2e.cjs` creates a local Kahoot-style quiz and tests model discovery, explicit selection, refresh persistence, model switching, screenshot capture, real API calls and answer indicators for arithmetic, science, geography, multiple correct answers, typed text, ordering, numeric answers and transcript-assisted answers across both display modes. Install `playwright-core` in your test environment and run with `E2E_API_KEY` and `E2E_CHROME_PATH` (an extension-capable Chrome for Testing binary). It uses the test API at `http://100.81.152.90:20128/v1`. Credentials are supplied only by environment variable and temporary profiles are removed afterward. The test pre-grants permissions in a temporary extension copy and invokes the solve entry point directly. Native permission approval, reopening the popup with saved settings, the popup solve button and Option+Z have also been manually exercised in Chrome for Testing on macOS.
 
 ## Disclaimer
 
