@@ -23,8 +23,10 @@ git clone https://github.com/Ketchio-dev/Kahoot-AI-Solver.git
 ## Setup
 
 1. Click the extension icon, then the `···` button in the top-right corner to reveal the settings view.
-2. Paste a **Gemini API key**, an **OpenAI API key**, or both, and click **Save Keys & Reload Models**.
-3. The three dropdowns fill with every model your keys can actually reach, fetched live at that moment.
+2. Paste a **Gemini API key**, an **OpenAI API key**, or both. For an OpenAI-compatible server, set its API URL including `/v1` (the default is `https://api.openai.com/v1`). Click **Save Keys & Reload Models**, then grant access to that server when Chrome asks.
+   - Custom servers must support `/models` and `/chat/completions` with image input. Models with `capabilities.vision: false` are excluded.
+   - Prefer HTTPS. HTTP transmits your API key and screenshots without transport encryption; use it only on a trusted network.
+3. The three dropdowns fill with candidate image-capable models fetched live. Official OpenAI model metadata does not guarantee image or Chat Completions support; some listed models may still reject the request.
 4. Assign a model to each slot. Your choice is stored locally and used by the matching shortcut.
 
 Get keys from [Google AI Studio](https://aistudio.google.com/apikey) and the [OpenAI platform](https://platform.openai.com/api-keys).
@@ -48,7 +50,7 @@ While a request is running, a faint dot pulses in the bottom-right corner. When 
 | Yellow | Circle | ● |
 | Green | Square | ■ |
 
-Errors surface as a black `!` dot in the same corner rather than a popup dialog, with the message in its tooltip and the browser console. The indicator is 14px and click-through, so it never blocks the page.
+Errors surface as a black `!` dot in the same corner rather than a popup dialog, with the message in the browser console. The indicator is 14px and click-through, so it never blocks the page.
 
 Holding a shortcut down will not stack requests: while one solve is in flight, further triggers are ignored so you are not billed for duplicate calls.
 
@@ -57,9 +59,9 @@ Holding a shortcut down will not stack requests: while one solve is in flight, f
 `models.js` calls:
 
 - `GET https://generativelanguage.googleapis.com/v1beta/models` — paginated, keeping only models that advertise `generateContent`
-- `GET https://api.openai.com/v1/models` — the response carries no modality metadata, so speech, image-generation, embedding, moderation and legacy completion models are filtered out by id pattern
+- `GET {OpenAI API URL}/models` — explicit `capabilities.vision` metadata takes priority when present; otherwise speech, image-generation, embedding, moderation and legacy completion models are filtered out by id pattern
 
-Results are merged into a single provider-tagged list. If a slot has no saved selection, the first available model is used automatically, so a new install works as soon as a key is saved. Nothing is cached between popup openings — hitting **Refresh model list** always re-queries the APIs, so newly released models appear without an extension update.
+Results are merged into a single provider-tagged list. Each slot starts with **Choose a model…** and requires an explicit selection. No model is automatically assigned. Refresh preserves your selection when it is available; if it disappears, choose another model rather than silently switching to a different paid model. Nothing is cached between popup openings — hitting **Refresh model list** always re-queries the APIs, so newly released models appear without an extension update.
 
 ## Files
 
@@ -74,6 +76,16 @@ Results are merged into a single provider-tagged list. If a slot has no saved se
 ## Privacy
 
 API keys and slot selections live in `chrome.storage.local` on your machine. Screenshots go directly from your browser to the provider you chose. There is no backend server.
+
+## Development checks
+
+```bash
+node --test tests/regression.cjs
+```
+
+The regression tests cover response validation, custom API routing and model filtering, concurrent solve protection, and indicator timer cleanup. They do not replace testing the unpacked extension in Chrome.
+
+`tests/e2e.cjs` creates a local Kahoot-style quiz and tests model discovery, explicit selection, refresh persistence, model switching, screenshot capture, real API calls and answer indicators for arithmetic, science and geography. Install `playwright-core` in your test environment and run with `E2E_API_KEY` and `E2E_CHROME_PATH` (an extension-capable Chrome for Testing binary). It uses the test API at `http://100.81.152.90:20128/v1`. Credentials are supplied only by environment variable and temporary profiles are removed afterward. The test pre-grants permissions in a temporary extension copy and invokes the solve entry point directly. Native permission approval, reopening the popup with saved settings, the popup solve button and Option+Z have also been manually exercised in Chrome for Testing on macOS.
 
 ## Disclaimer
 

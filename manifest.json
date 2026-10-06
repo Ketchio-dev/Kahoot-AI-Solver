@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Kahoot AI Solver - Smart Assistant",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "description": "A smart assistant that analyzes Kahoot quizzes in real-time using AI.",
     "author": "Junsu",
     "icons": {
@@ -18,6 +18,7 @@
         "https://generativelanguage.googleapis.com/*",
         "https://api.openai.com/*"
     ],
+    "optional_host_permissions": ["http://*/*", "https://*/*"],
     "background": {
         "service_worker": "background.js"
     },

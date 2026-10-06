@@ -13,8 +13,10 @@ const ANSWER_STYLES = {
 };
 
 const INDICATOR_ID = 'kahoot-stealth-indicator';
+let indicatorTimer;
 
 function removeIndicator() {
+    clearTimeout(indicatorTimer);
     const existing = document.getElementById(INDICATOR_ID);
     if (existing) existing.remove();
 }
@@ -35,14 +37,14 @@ function showProcessing() {
 }
 
 function showAnswer(answer) {
-    const key = Object.keys(ANSWER_STYLES).find((k) => answer.toLowerCase().includes(k));
+    const key = answer.trim().toLowerCase();
     const style = key ? ANSWER_STYLES[key] : { color: '#333333', icon: '?' };
 
     const indicator = createIndicator();
     indicator.style.backgroundColor = style.color;
     indicator.textContent = style.icon;
 
-    setTimeout(removeIndicator, 2500);
+    indicatorTimer = setTimeout(removeIndicator, 2500);
 }
 
 function showError(message) {
@@ -52,7 +54,7 @@ function showError(message) {
     indicator.textContent = '!';
     indicator.title = message;
 
-    setTimeout(removeIndicator, 4000);
+    indicatorTimer = setTimeout(removeIndicator, 4000);
 }
 
 chrome.runtime.onMessage.addListener((request) => {

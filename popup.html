@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <title>Youtube Ad Blocker Settings</title>
   <style>
     body {
-      width: 320px;
+      width: 360px;
+      color: #243047;
+      background: #f7f9fc;
       padding: 15px;
       font-family: sans-serif;
     }
@@ -27,6 +29,7 @@
     }
 
     input[type="text"],
+    input[type="password"],
     select {
       width: 100%;
       padding: 8px;
@@ -46,9 +49,21 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #357ae8;
+    button:hover:not(:disabled) {
+      filter: brightness(0.94);
     }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    input:focus-visible, select:focus-visible, button:focus-visible {
+      outline: 2px solid #4285f4;
+      outline-offset: 2px;
+    }
+
+    small { display: block; margin-top: 6px; color: #667085; line-height: 1.4; }
 
     .slot-row {
       display: flex;
@@ -105,14 +120,20 @@
 
   <!-- REAL VIEW: Hidden by default -->
   <div id="real-view" style="display: none;">
-    <h2>Settings</h2>
+    <h2>Kahoot AI · Settings</h2>
+    <p style="font-size: 12px; color: #667085;">Connect your API, then choose a model for each shortcut.</p>
     <div class="form-group">
       <label for="apiKey">Gemini API Key:</label>
-      <input type="text" id="apiKey" placeholder="Enter your Gemini API Key">
+      <input type="password" id="apiKey" placeholder="Enter your Gemini API Key">
     </div>
     <div class="form-group">
       <label for="openaiApiKey">OpenAI API Key:</label>
-      <input type="text" id="openaiApiKey" placeholder="Enter your OpenAI API Key">
+      <input type="password" id="openaiApiKey" placeholder="Enter your OpenAI API Key">
+    </div>
+    <div class="form-group">
+      <label for="openaiBaseUrl">OpenAI-compatible API URL (including /v1):</label>
+      <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
+      <small>HTTP sends keys and screenshots without encryption. Use only a trusted network.</small>
     </div>
     <button id="saveBtn" style="margin-bottom: 10px;">Save Keys &amp; Reload Models</button>
     <hr>
@@ -120,22 +141,23 @@
     <label>Model slots (loaded live from your API keys):</label>
     <div class="slot-row">
       <button id="solveSlot1">Alt+Z</button>
-      <select id="slot1"></select>
+      <select id="slot1" aria-label="Model for Alt+Z"></select>
     </div>
     <div class="slot-row">
       <button id="solveSlot2" style="background-color: #9334a8;">Alt+X</button>
-      <select id="slot2"></select>
+      <select id="slot2" aria-label="Model for Alt+X"></select>
     </div>
     <div class="slot-row">
       <button id="solveSlot3" style="background-color: #10a37f;">Alt+C</button>
-      <select id="slot3"></select>
+      <select id="slot3" aria-label="Model for Alt+C"></select>
     </div>
 
     <button id="refreshBtn" style="background-color: #666; margin-top: 8px;">Refresh model list</button>
-    <div id="modelStatus"></div>
+    <div id="modelStatus" role="status" aria-live="polite"></div>
     <div id="status">Settings saved!</div>
   </div>
 
+  <script src="models.js"></script>
   <script src="popup.js"></script>
 </body>
 

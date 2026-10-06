@@ -3,7 +3,7 @@ importScripts('models.js');
 const SLOTS = ['slot1', 'slot2', 'slot3'];
 
 async function getKeys() {
-    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey']);
+    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl']);
 }
 
 // The content script is absent on restricted pages; a failed notify must not
@@ -16,20 +16,12 @@ async function notifyTab(tabId, message) {
     }
 }
 
-// Resolves the model assigned to a slot. If nothing has been picked yet,
-// the first model the provider APIs currently return is used.
+// Only use an explicit user selection; never silently choose a paid model.
 async function resolveSlotModel(slot) {
-    const keys = await getKeys();
+    if (!SLOTS.includes(slot)) throw new Error('Invalid model slot.');
     const stored = (await chrome.storage.local.get(slot))[slot];
-    if (stored && stored.id && stored.provider) return stored;
-
-    const { models, errors } = await fetchAvailableModels(keys);
-    if (!models.length) {
-        throw new Error(errors.length ? errors.join(' | ') : 'No API key set. Open the settings and save a key.');
-    }
-    const fallback = models[0];
-    await chrome.storage.local.set({ [slot]: fallback });
-    return fallback;
+    if (stored?.id && ['openai', 'gemini'].includes(stored.provider)) return stored;
+    throw new Error('Select a model for this slot in settings first.');
 }
 
 // On pages loaded before the extension, the content script has to be injected
@@ -54,11 +46,11 @@ const solveQuestion = async (slot) => {
         return;
     }
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) return;
-
     solveInFlight = true;
+    let tab;
     try {
+        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) return;
         await startProcessingIndicator(tab.id);
 
         const model = await resolveSlotModel(slot);
@@ -70,12 +62,14 @@ const solveQuestion = async (slot) => {
             return;
         }
 
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: "png" });
+        const [activeTab] = await chrome.tabs.query({ active: true, windowId: tab.windowId });
+        if (activeTab?.id !== tab.id) throw new Error('The active tab changed. Please try again.');
+        const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
         const base64Image = dataUrl.split(',')[1];
 
         console.log(`Querying ${model.provider}/${model.id}...`);
         const finalAnswer = model.provider === 'openai'
-            ? await analyzeImageOpenAI(apiKey, base64Image, model.id)
+            ? await analyzeImageOpenAI(apiKey, base64Image, model.id, keys.openaiBaseUrl)
             : await analyzeImage(apiKey, base64Image, model.id);
 
         console.log(`Final Decision: ${finalAnswer} via ${model.provider}/${model.id}`);
@@ -83,7 +77,7 @@ const solveQuestion = async (slot) => {
         updateIcon(finalAnswer);
     } catch (error) {
         console.error("Error processing:", error);
-        await notifyTab(tab.id, { action: "error", message: error.message });
+        if (tab) await notifyTab(tab.id, { action: "error", message: error.message });
         chrome.action.setIcon({ imageData: drawIcon('#FF0000') });
         setTimeout(() => chrome.action.setIcon({ imageData: drawIcon('#000000') }), 1000);
     } finally {
@@ -157,7 +151,7 @@ const PROMPT = `
     - Yellow (Circle)
     - Green (Square)
 
-    Think step by step to identify the correct answer:
+    Identify the correct answer without outputting reasoning:
     1. Read the question text.
     2. Identify the answer options.
     3. Determine which option is correct based on your knowledge.
@@ -165,7 +159,6 @@ const PROMPT = `
 
     Output valid JSON ONLY in this format:
     {
-      "reasoning": "Your step-by-step reasoning here",
       "answer": "red"
     }
   `;
@@ -173,7 +166,7 @@ const PROMPT = `
 async function analyzeImage(apiKey, base64Image, model) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,24 +185,32 @@ async function analyzeImage(apiKey, base64Image, model) {
     }
 
     const result = await response.json();
-    const text = result.candidates[0].content.parts[0].text;
+    const text = result.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('');
+    if (!text) throw new Error('Gemini returned no answer (possibly blocked or truncated).');
     return parseResponse(text);
 }
 
 function parseResponse(text) {
+    if (typeof text !== 'string' || !text.trim()) throw new Error('The AI returned no answer.');
+    const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    let answer;
     try {
-        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const json = JSON.parse(cleaned);
-        console.log("AI Reasoning:", json.reasoning);
-        return json.answer.trim().toLowerCase();
-    } catch (e) {
-        console.warn("Failed to parse JSON, falling back to raw text:", text);
-        return text.trim().toLowerCase();
+        answer = JSON.parse(cleaned).answer;
+    } catch {
+        answer = cleaned;
     }
+    const aliases = { triangle: 'red', diamond: 'blue', circle: 'yellow', square: 'green' };
+    if (typeof answer !== 'string') throw new Error('The AI returned an invalid answer.');
+    answer = answer.trim().toLowerCase();
+    answer = aliases[answer] || answer;
+    if (!['red', 'blue', 'yellow', 'green'].includes(answer)) {
+        throw new Error('The AI returned an invalid or incomplete answer. Please try again.');
+    }
+    return answer;
 }
 
-async function analyzeImageOpenAI(apiKey, base64Image, model) {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function analyzeImageOpenAI(apiKey, base64Image, model, baseUrl) {
+    const response = await apiFetch(`${normalizeOpenAIBaseUrl(baseUrl)}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -225,8 +226,7 @@ async function analyzeImageOpenAI(apiKey, base64Image, model) {
                         { type: "image_url", image_url: { url: `data:image/png;base64,${base64Image}` } }
                     ]
                 }
-            ],
-            max_completion_tokens: 300
+            ]
         })
     });
 
@@ -236,6 +236,7 @@ async function analyzeImageOpenAI(apiKey, base64Image, model) {
     }
 
     const result = await response.json();
-    const text = result.choices[0].message.content;
+    if (result.choices?.[0]?.finish_reason === 'length') throw new Error('The model response was truncated. Try another model.');
+    const text = result.choices?.[0]?.message?.content;
     return parseResponse(text);
 }
