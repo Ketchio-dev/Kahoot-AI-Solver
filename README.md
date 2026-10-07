@@ -99,7 +99,7 @@ node --test tests/regression.cjs tests/landing.cjs
 
 ## Website and logo
 
-`docs/` holds a static Korean landing page. GitHub Pages can serve it from the `main` branch and `/docs` folder. `docs/assets/logo.svg` is the logo source. `tools/build-site.cjs` renders `icon16.png`, `icon48.png` and `icon128.png` from it and rebuilds `docs/privacy.html` from `PRIVACY.md`:
+`docs/` holds a static English landing page. GitHub Pages can serve it from the `main` branch and `/docs` folder. `docs/assets/logo.svg` is the logo source. `tools/build-site.cjs` renders `icon16.png`, `icon48.png` and `icon128.png` from it and rebuilds `docs/privacy.html` from `PRIVACY.md`:
 
 ```bash
 npm install --no-save @resvg/resvg-js

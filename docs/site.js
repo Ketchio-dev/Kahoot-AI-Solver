@@ -10,10 +10,10 @@ for (const button of modeButtons) {
     const compact = button.dataset.mode === 'stealth';
     preview.dataset.display = compact ? 'stealth' : 'normal';
     result.textContent = compact ? '■' : '■ GREEN';
-    duration.textContent = compact ? '실제 표시: 8초' : '실제 표시: 15초';
+    duration.textContent = compact ? 'Shown for 8 s' : 'Shown for 15 s';
     note.textContent = compact
-      ? 'Stealth도 화면 캡처나 화면 공유에 보여요. 이 데모는 실제 AI 요청을 하지 않아요.'
-      : '표시 방식만 보여주는 데모예요. 실제 AI 요청이나 화면 캡처는 하지 않아요.';
+      ? 'Stealth still shows up in screenshots and screen sharing. This demo makes no AI requests.'
+      : 'This only shows how answers are displayed. It makes no AI requests and captures no screen.';
     for (const modeButton of modeButtons) {
       modeButton.setAttribute('aria-pressed', String(modeButton === button));
     }

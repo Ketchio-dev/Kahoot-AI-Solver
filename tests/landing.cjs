@@ -70,7 +70,8 @@ test('extension icons are PNGs at the sizes declared in the manifest', () => {
 test('pages declare language, title, viewport, one h1, and image attributes', () => {
   for (const page of pages) {
     const html = read('docs', page);
-    assert.match(html, /<html lang="(ko|en)"/, page);
+    assert.match(html, /<html lang="en"/, page);
+    assert.doesNotMatch(html, /[\uAC00-\uD7A3]/, page + ' contains Korean text');
     assert.match(html, /<title>[^<]+<\/title>/, page);
     assert.match(html, /name="viewport"/, page);
     assert.equal((html.match(/<h1\b/g) || []).length, 1, page + ' h1 count');
