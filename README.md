@@ -90,12 +90,23 @@ API keys and slot selections live in `chrome.storage.local` on your machine. Scr
 ## Development checks
 
 ```bash
-node --test tests/regression.cjs
+node --test tests/regression.cjs tests/landing.cjs
 ```
 
-The regression tests cover response validation, custom API routing and model filtering, concurrent solve protection, and indicator timer cleanup. They do not replace testing the unpacked extension in Chrome.
+`tests/landing.cjs` statically checks the `docs/` site (links, anchors, install URL, shortcuts against the manifest, icon sizes). It needs no network access or API keys. The regression tests cover response validation, custom API routing and model filtering, concurrent solve protection, and indicator timer cleanup. They do not replace testing the unpacked extension in Chrome.
 
 `tests/e2e.cjs` creates a local Kahoot-style quiz and tests model discovery, explicit selection, refresh persistence, model switching, screenshot capture, real API calls and answer indicators for arithmetic, science, geography, multiple correct answers, typed text, ordering, numeric answers and transcript-assisted answers across both display modes. Install `playwright-core` in your test environment and run with `E2E_API_KEY` and `E2E_CHROME_PATH` (an extension-capable Chrome for Testing binary). It uses the test API at `http://100.81.152.90:20128/v1`. Credentials are supplied only by environment variable and temporary profiles are removed afterward. The test pre-grants permissions in a temporary extension copy and invokes the solve entry point directly. Native permission approval, reopening the popup with saved settings, the popup solve button and Option+Z have also been manually exercised in Chrome for Testing on macOS.
+
+## Website and logo
+
+`docs/` holds a static Korean landing page. GitHub Pages can serve it from the `main` branch and `/docs` folder. `docs/assets/logo.svg` is the logo source. `tools/build-site.cjs` renders `icon16.png`, `icon48.png` and `icon128.png` from it and rebuilds `docs/privacy.html` from `PRIVACY.md`:
+
+```bash
+npm install --no-save @resvg/resvg-js
+node tools/build-site.cjs
+```
+
+The icons ship inside the extension package, so a new logo reaches the Chrome Web Store only with the next uploaded version.
 
 ## Disclaimer
 

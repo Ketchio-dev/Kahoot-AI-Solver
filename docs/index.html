@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#20263e">
+  <meta name="description" content="Kahoot 연습 퀴즈를 위한 AI 답변 도우미. Gemini, OpenAI 또는 호환 API를 연결하고, 단축키로 화면 속 질문에 대한 답변 제안을 확인하세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Kahoot AI Solver — 내 퀴즈, 내가 고른 AI">
+  <meta property="og:description" content="내 API와 모델로, 화면 속 퀴즈에 대한 답변 제안을 받아보세요. Chrome 확장 프로그램.">
+  <title>Kahoot AI Solver — 내 퀴즈, 내가 고른 AI</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="stylesheet" href="site.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header container">
+    <a class="brand" href="./" aria-label="Kahoot AI Solver 홈">
+      <img src="assets/logo.svg" width="40" height="40" alt="">
+      <span>Kahoot <b>AI Solver</b></span>
+    </a>
+    <nav aria-label="주요 메뉴">
+      <a href="#how-it-works">사용 방법</a>
+      <a href="#privacy">데이터 안내</a>
+      <a class="nav-source" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+    <a class="button button-small button-dark header-install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">Chrome에 추가 <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="main">
+    <section class="hero container" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-shapes" aria-hidden="true">▲ ◆ ● ■</span> A LITTLE HELP FOR YOUR NEXT QUIZ</p>
+        <h1 id="hero-title">내 퀴즈.<br>내가 고른 <span>AI.</span></h1>
+        <p class="hero-description">화면 속 질문을, AI에게 물어보세요.<br>단축키 한 번으로 답변 제안을 확인하는<br class="desktop-break"> Kahoot 연습 도우미.</p>
+        <div class="hero-actions">
+          <a class="button button-purple" id="install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 8.5H20M9 13.8L5 6M13.7 15L9 21" stroke="currentColor" stroke-width="1.7"/></svg>
+            Chrome에 추가 <span aria-hidden="true">↗</span>
+          </a>
+          <a class="text-link" href="#how-it-works">설정 가이드 <span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="fine-print">내 API 키가 필요해요. AI 제공업체의 이용 요금이 발생할 수 있어요.</p>
+      </div>
+
+      <div class="hero-demo">
+        <div class="demo-toolbar">
+          <span class="demo-label"><span class="status-dot" aria-hidden="true"></span> 답변 표시 미리보기</span>
+          <div class="mode-switch" role="group" aria-label="미리보기 표시 모드">
+            <button type="button" data-mode="normal" aria-pressed="true">Normal</button>
+            <button type="button" data-mode="stealth" aria-pressed="false">Stealth</button>
+          </div>
+        </div>
+        <div class="browser-preview">
+          <div class="browser-top" aria-hidden="true"><div class="window-dots"><i></i><i></i><i></i></div><span>practice quiz</span><span class="browser-menu">···</span></div>
+          <div class="quiz-preview" id="quiz-preview" data-display="normal">
+            <div class="quiz-meta"><span>SCIENCE / 과학</span><span>01 — 05</span></div>
+            <div class="planet" aria-hidden="true"><svg width="58" height="58" viewBox="0 0 58 58" fill="none"><circle cx="29" cy="29" r="17" fill="#eeeafd"/><circle cx="29" cy="29" r="16" stroke="#8271cf" stroke-width="1.5"/><ellipse cx="29" cy="29" rx="27" ry="8" transform="rotate(-28 29 29)" stroke="#8271cf" stroke-width="1.5"/><circle cx="26" cy="22" r="3" fill="#cdc4ee"/><circle cx="33" cy="34" r="4" fill="#cdc4ee"/></svg></div>
+            <h2>‘붉은 행성’이라고<br>불리는 행성은?</h2>
+            <div class="quiz-options" aria-label="예시 퀴즈의 보기">
+              <div class="quiz-option red"><span aria-hidden="true">▲</span> 지구</div>
+              <div class="quiz-option blue"><span aria-hidden="true">◆</span> 금성</div>
+              <div class="quiz-option yellow"><span aria-hidden="true">●</span> 목성</div>
+              <div class="quiz-option green"><span aria-hidden="true">■</span> 화성</div>
+            </div>
+            <div class="preview-bottom"><span>연습 퀴즈 · 미리 작성된 예시</span><span class="demo-result" id="demo-result" role="img" aria-label="예시 답변: 초록색, 화성">■ GREEN</span></div>
+          </div>
+        </div>
+        <div class="demo-caption"><span><kbd>Alt</kbd> + <kbd>Z</kbd> <span class="caption-arrow" aria-hidden="true">→</span> 화면 캡처 <span class="caption-arrow" aria-hidden="true">→</span> AI 답변 제안</span><span class="mode-duration" id="mode-duration">실제 표시: 15초</span></div>
+        <p class="demo-disclaimer" id="demo-note" aria-live="polite">표시 방식만 보여주는 데모예요. 실제 AI 요청이나 화면 캡처는 하지 않아요.</p>
+      </div>
+    </section>
+
+    <div class="provider-strip container" aria-label="지원 API">
+      <p>모델은 우리가 정하지 않아요. <br><strong>쓰고 싶은 AI를 연결하세요.</strong></p>
+      <div class="provider-names"><span>Gemini</span><span>OpenAI</span><span class="compatible-label">OpenAI-compatible <small>나만의 API 서버</small></span></div>
+    </div>
+
+    <section class="models-section container section-space" aria-labelledby="models-title">
+      <div class="section-intro">
+        <p class="eyebrow">YOUR MODELS, YOUR SHORTCUTS</p>
+        <h2 id="models-title">모델은 자유롭게.<br>단축키는 익숙하게.</h2>
+        <p>연결한 API에서 모델 목록을 불러오고,<br>세 개의 슬롯에 원하는 모델을 지정하세요.<br>새 모델은 목록을 새로고침해 확인할 수 있어요.</p>
+        <a class="text-link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver#setup" target="_blank" rel="noopener noreferrer">모델 연결 안내 <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="shortcut-board">
+        <div class="board-heading"><span>나의 모델 슬롯</span><span>직접 선택 · 직접 실행</span></div>
+        <div class="shortcut-row"><span class="slot-number">01</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>Z</kbd></div><span class="slot-description">첫 번째로 고른 모델</span><span class="slot-shape triangle" aria-hidden="true"></span></div>
+        <div class="shortcut-row"><span class="slot-number">02</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>X</kbd></div><span class="slot-description">두 번째로 고른 모델</span><span class="slot-shape diamond" aria-hidden="true"></span></div>
+        <div class="shortcut-row"><span class="slot-number">03</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>C</kbd></div><span class="slot-description">세 번째로 고른 모델</span><span class="slot-shape circle" aria-hidden="true"></span></div>
+        <p>Mac에서는 <strong>Option ⌥</strong> 키를 사용하세요.<br>팝업의 실행 버튼으로도 같은 모델을 호출할 수 있어요.</p>
+      </div>
+    </section>
+
+    <section class="formats-section section-space" aria-labelledby="formats-title">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow">BEYOND FOUR COLORS</p><h2 id="formats-title">답변의 형태에 맞춰.</h2></div><p>색상 선택부터 텍스트와 숫자까지.<br>화면에 보이는 질문과 보기를 바탕으로 제안해요.</p></div>
+        <div class="format-list">
+          <div class="format-item"><div class="format-preview color-preview" aria-hidden="true"><span>▲</span><span>◆</span><span>●</span><span>■</span></div><h3>하나 또는 여러 보기</h3><p>단일 선택, 참·거짓, 복수 정답</p></div>
+          <div class="format-item"><div class="format-preview text-preview" aria-hidden="true">photosynthesis<span class="text-cursor"></span></div><h3>직접 입력하는 답</h3><p>텍스트 답변 제안</p></div>
+          <div class="format-item"><div class="format-preview order-preview" aria-hidden="true"><span>1</span><i>→</i><span>2</span><i>→</i><span>3</span></div><h3>순서가 있는 답</h3><p>퍼즐 보기의 순서 제안</p></div>
+          <div class="format-item"><div class="format-preview number-preview" aria-hidden="true"><span>42</span><div><i></i></div></div><h3>숫자로 표현하는 답</h3><p>슬라이더용 숫자 제안</p></div>
+        </div>
+        <p class="section-note">AI 제안은 틀릴 수 있고, 모든 퀴즈 형식이 보장되지는 않아요. 답을 고르고 제출하는 것은 사용자의 몫이에요.</p>
+      </div>
+    </section>
+
+    <section class="setup-section container section-space" id="how-it-works" aria-labelledby="setup-title">
+      <div class="setup-main"><p class="eyebrow">LET’S SET YOU UP</p><h2 id="setup-title">처음 한 번만 연결하세요.</h2>
+        <ol class="setup-steps">
+          <li><span class="step-index" aria-hidden="true">01</span><div><h3>확장 프로그램 설치 후, 설정 열기</h3><p>확장 아이콘을 누른 뒤 오른쪽 위 <b>···</b> 버튼을 누르세요. 첫 화면에는 “Youtube Ad Blocker”라고 표시되지만, 광고 차단 기능은 없어요.</p></div></li>
+          <li><span class="step-index" aria-hidden="true">02</span><div><h3>내 API 키 연결하기</h3><p>Gemini 또는 OpenAI 키를 입력하고 <b>Save Keys &amp; Reload Models</b>를 누르세요. 호환 서버는 <code>/v1</code>을 포함한 URL을 입력하고 Chrome의 접근 권한 요청을 승인하세요.</p><div class="key-links"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini 키 발급 <span aria-hidden="true">↗</span></a><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI 키 발급 <span aria-hidden="true">↗</span></a></div></div></li>
+          <li><span class="step-index" aria-hidden="true">03</span><div><h3>모델을 고르고, 연습 퀴즈에서 실행</h3><p>쓸 슬롯마다 이미지 입력을 지원하는 모델을 지정하세요. 질문과 보기가 화면에 보일 때 단축키를 누르면 답변 제안이 표시돼요.</p></div></li>
+        </ol>
+      </div>
+      <figure class="settings-figure"><div class="settings-frame"><img src="assets/settings.webp" width="564" height="1238" loading="lazy" alt="확장 프로그램의 실제 AI 설정 화면. API 키 입력란, 답변 표시 모드, 미디어 문맥 입력란과 세 개의 모델 슬롯이 있습니다."></div><figcaption><span class="status-dot" aria-hidden="true"></span> 실제 설정 화면 · API 키를 비운 상태</figcaption></figure>
+    </section>
+
+    <section class="privacy-section" id="privacy" aria-labelledby="privacy-title">
+      <div class="container privacy-grid">
+        <div><p class="eyebrow">KNOW WHAT YOU SHARE</p><h2 id="privacy-title">내 브라우저에서,<br>내가 선택한 AI로.</h2><p class="privacy-summary">개발자가 운영하는 중계 서버 없이,<br>연결한 제공업체로 직접 요청을 보내요.</p><a class="text-link" href="privacy.html">개인정보 처리방침 <span aria-hidden="true">↗</span></a></div>
+        <div class="privacy-details">
+          <div class="data-flow" aria-label="데이터 흐름: 내 브라우저에서 선택한 AI 제공업체로"><span>내 브라우저<small>화면 캡처 + 선택한 문맥</small></span><span class="flow-arrow" aria-hidden="true">→</span><span>선택한 AI<small>Gemini · OpenAI · 호환 API</small></span></div>
+          <dl><div><dt>키와 설정은 로컬에</dt><dd>API 키와 모델 설정은 <code>chrome.storage.local</code>에 저장해요. 확장 프로그램이 별도로 암호화한다는 뜻은 아니에요.</dd></div><div><dt>실행할 때 보이는 화면을 전송</dt><dd>단축키나 실행 버튼을 누르면 현재 탭의 보이는 영역을 캡처해요. 개인정보가 보이는 화면에서는 실행하지 마세요.</dd></div><div><dt>비용과 데이터 정책은 제공업체 기준</dt><dd>API 이용 요금과 보관 정책은 연결한 서비스에 따라 달라요. 호환 서버는 신뢰할 수 있는 HTTPS 주소를 사용하세요.</dd></div></dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq-section container section-space" aria-labelledby="faq-title">
+      <div class="section-intro"><p class="eyebrow">A FEW THINGS TO KNOW</p><h2 id="faq-title">설치 전에 <br>궁금한 것들.</h2><a class="text-link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">문의 · 버그 제보 <span aria-hidden="true">↗</span></a></div>
+      <div class="faq-list">
+        <details><summary>API 키나 AI 크레딧이 포함되어 있나요?<span aria-hidden="true">+</span></summary><p>아니요. 본인의 Gemini, OpenAI 또는 호환 API 계정을 연결해야 해요. API 사용 요금은 선택한 제공업체가 청구하며, 이 확장 프로그램에는 API 키나 크레딧이 포함되어 있지 않아요.</p></details>
+        <details><summary>답을 자동으로 클릭하거나 제출하나요?<span aria-hidden="true">+</span></summary><p>아니요. 화면에 답변 제안만 표시해요. 정확성을 직접 확인하고, 사용자가 보기를 선택하고 제출해야 해요. 학습·연습·연구용으로, AI 도움을 허용하는 환경에서만 사용하세요.</p></details>
+        <details><summary>Normal과 Stealth는 어떻게 다른가요?<span aria-hidden="true">+</span></summary><p>Normal은 읽기 쉬운 패널을 15초 동안 보여줘요. Stealth는 단일 선택 답을 작은 모서리 도형으로, 복잡한 답은 작은 텍스트 상자로 8초 동안 보여줘요. 둘 다 화면 캡처나 화면 공유에 보일 수 있어요.</p></details>
+        <details><summary>오디오나 동영상 문제도 되나요?<span aria-hidden="true">+</span></summary><p>오디오 녹음이나 동영상 업로드는 지원하지 않아요. 설정의 Audio/video context에 자막, 대본, 관찰한 내용을 붙여 넣고 팝업의 실행 버튼을 누르면 화면 캡처와 함께 보내요. 이 문맥은 저장되지 않고 팝업을 닫으면 지워져요. 단축키는 화면 캡처만 보내요.</p></details>
+        <details><summary>목록에 나오는 모든 모델을 쓸 수 있나요?<span aria-hidden="true">+</span></summary><p>반드시 그렇지는 않아요. 이미지 입력과 API 호환 여부는 제공업체에 따라 달라서, 목록에 있어도 요청을 거부할 수 있어요. 호환 서버는 <code>/models</code>와 이미지 입력을 받는 <code>/chat/completions</code>를 지원해야 해요. 필요한 정보가 화면에 없거나 모델이 잘못 해석하면 정확한 답을 얻을 수 없어요.</p></details>
+      </div>
+    </section>
+
+    <section class="closing container" aria-labelledby="closing-title"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2 id="closing-title">다음 연습 퀴즈에,<br>작은 도움을 더해보세요.</h2></div><div><a class="button button-purple" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">Chrome에 추가 <span aria-hidden="true">↗</span></a><p class="fine-print">내 API 키로 시작하세요.</p></div></section>
+  </main>
+
+  <footer class="site-footer container"><div class="footer-top"><a class="brand" href="./"><img src="assets/logo.svg" width="32" height="32" alt=""><span>Kahoot <b>AI Solver</b></span></a><div><a href="privacy.html">개인정보 처리방침</a><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">소스 코드 ↗</a><a href="assets/logo.svg" download="kahoot-ai-solver-logo.svg">SVG 로고 ↓</a></div></div><p>Ketchio-dev의 독립 프로젝트입니다. Kahoot!, Google 또는 OpenAI와 제휴하거나 이들의 승인을 받은 제품이 아닙니다.<br>학습·연습·연구용으로, 학교와 퀴즈 진행자의 AI 사용 규칙을 지켜주세요.</p></footer>
+</body>
+</html>
