@@ -26,6 +26,23 @@ const inline = (text) => escapeHtml(text)
   .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   .replace(/`([^`]+)`/g, '<code>$1</code>');
 
+// The header, footer and icon sprite come straight from docs/index.html so both pages stay in sync.
+function shell() {
+  const index = read('docs/index.html');
+  const pick = (pattern, label) => {
+    const match = index.match(pattern);
+    if (!match) throw new Error('docs/index.html: could not find the ' + label);
+    return match[0];
+  };
+  // Same-page anchors point at the home page when used from the privacy page.
+  const toHome = (html) => html.replace(/href="#([^"]+)"/g, 'href="./#$1"');
+  return {
+    sprite: pick(/<svg class="sprite"[\s\S]*?<\/svg>/, 'icon sprite'),
+    header: toHome(pick(/<header class="site-header[\s\S]*?<\/header>/, 'header')),
+    footer: pick(/<footer class="site-footer[\s\S]*?<\/footer>/, 'footer')
+  };
+}
+
 function buildPrivacyPage() {
   const blocks = read('PRIVACY.md').trim().split(/\n\n+/).map((block) => {
     if (block.startsWith('# ')) return '<h1>' + inline(block.slice(2)) + '</h1>';
@@ -37,26 +54,28 @@ function buildPrivacyPage() {
     return '<p' + cls + '>' + inline(block.replaceAll('\n', ' ')) + '</p>';
   }).join('\n\n');
 
+  const { sprite, header, footer } = shell();
   write('docs/privacy.html', [
     '<!doctype html>',
     '<html lang="en">',
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="theme-color" content="#20263e">',
+    '<meta name="theme-color" content="#fbfaf7">',
     '<meta name="description" content="How Kahoot AI Solver handles API keys, screenshots, optional context and local settings.">',
     '<title>Privacy policy — Kahoot AI Solver</title>',
     '<link rel="icon" type="image/svg+xml" href="assets/logo.svg">',
+    '<link rel="preload" href="assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>',
     '<link rel="stylesheet" href="site.css">',
     '</head>',
     '<body>',
+    sprite,
     '<a class="skip-link" href="#main">Skip to content</a>',
-    '<header class="site-header container"><a class="brand" href="./" aria-label="Kahoot AI Solver home"><img src="assets/logo.svg" width="40" height="40" alt=""><span>Kahoot <b>AI Solver</b></span></a><nav aria-label="Main navigation"><a href="./"><span aria-hidden="true">←</span> Back to home</a></nav></header>',
-    '<main class="policy container" id="main">',
-    '<p class="eyebrow">KNOW WHAT YOU SHARE</p>',
+    header,
+    '<main class="policy" id="main">',
     blocks,
     '</main>',
-    '<footer class="site-footer container"><div class="footer-top"><a class="brand" href="./"><img src="assets/logo.svg" width="32" height="32" alt=""><span>Kahoot <b>AI Solver</b></span></a><div><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">Support ↗</a><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">Source ↗</a></div></div><p>Independent project by Ketchio-dev. Not affiliated with or endorsed by Kahoot!, Google or OpenAI.</p></footer>',
+    footer,
     '</body>',
     '</html>',
     ''

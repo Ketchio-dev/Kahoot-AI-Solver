@@ -108,6 +108,8 @@ node tools/build-site.cjs
 
 The icons ship inside the extension package, so a new logo reaches the Chrome Web Store only with the next uploaded version.
 
+The site loads nothing from third parties. Headlines use Bricolage Grotesque (SIL Open Font License 1.1, `docs/assets/fonts/OFL.txt`), self-hosted as a 32 KB Latin subset. It was built from the `google/fonts` variable file with fontTools: pin `opsz=60 wdth=100`, keep `wght=500:800`, then `pyftsubset` to Basic Latin and Latin-1 as WOFF2. Body text uses the system font.
+
 ## Disclaimer
 
 Built for learning and research. Using it to cheat in a graded or competitive setting is on you.

@@ -3,144 +3,249 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#20263e">
-  <meta name="description" content="Get AI answer suggestions for the Kahoot question on your screen, using the model and API account you choose. A Chrome extension.">
+  <meta name="theme-color" content="#fbfaf7">
+  <meta name="description" content="Press a shortcut and get an AI answer suggestion for the Kahoot question on your screen, from the model and API account you choose. A Chrome extension.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Kahoot AI Solver — Your quiz. Your AI.">
-  <meta property="og:description" content="Get answer suggestions for the quiz on your screen from the model and API you choose. A Chrome extension.">
-  <title>Kahoot AI Solver — Your quiz. Your AI.</title>
+  <meta property="og:title" content="Kahoot AI Solver — Press a key, get a suggested answer">
+  <meta property="og:description" content="A Chrome extension that captures the quiz on your screen, asks the model you chose, and shows a suggestion on the page.">
+  <title>Kahoot AI Solver — Press a key, get a suggested answer</title>
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="preload" href="assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="site.css">
   <script src="site.js" defer></script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-tri" viewBox="0 0 24 24"><path d="M12 3.5 22 20.5H2z"/></symbol>
+    <symbol id="i-dia" viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12z"/></symbol>
+    <symbol id="i-cir" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+    <symbol id="i-sq" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></symbol>
+    <symbol id="i-up" viewBox="0 0 16 16"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"/></symbol>
+    <symbol id="i-right" viewBox="0 0 16 16"><path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"/></symbol>
+    <symbol id="i-chrome" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3.6"/><path d="M12 8.4h8.6M9 13.8 4.7 6.3M13.7 15.1 9.3 21"/></g></symbol>
+  </svg>
+
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header container">
+
+  <header class="site-header wrap">
     <a class="brand" href="./" aria-label="Kahoot AI Solver home">
-      <img src="assets/logo.svg" width="40" height="40" alt="">
+      <img src="assets/logo.svg" width="36" height="36" alt="">
       <span>Kahoot <b>AI Solver</b></span>
+      <svg class="ketchup" viewBox="0 0 16 24" width="11" height="17" aria-hidden="true" focusable="false"><path d="M6.3 1h3.4l.6 3.2H5.7z" fill="#1c2033"/><rect x="4.9" y="4" width="6.2" height="2.4" rx=".7" fill="#8f1717"/><path d="M4.3 6.4h7.4c1.3 1.2 2.1 2.7 2.1 4.6v9.1c0 1.7-1.3 2.9-3 2.9H5.2c-1.7 0-3-1.2-3-2.9V11c0-1.9.8-3.4 2.1-4.6z" fill="#c72b2b"/><rect x="4.2" y="12" width="7.6" height="5.6" rx="1" fill="#fff" opacity=".92"/></svg>
     </a>
     <nav aria-label="Main navigation">
+      <a href="#how-it-works">How it works</a>
+      <a href="#models">Models</a>
       <a href="#setup">Setup</a>
       <a href="#privacy">Privacy</a>
-      <a class="nav-source" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+      <a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">GitHub <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
     </nav>
-    <a class="button button-small button-dark header-install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">Add to Chrome <span aria-hidden="true">↗</span></a>
+    <a class="btn btn-red btn-sm" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">Add to Chrome</a>
   </header>
 
   <main id="main">
-    <section class="hero container" aria-labelledby="hero-title">
+    <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="tiny-shapes" aria-hidden="true">▲ ◆ ● ■</span> A LITTLE HELP FOR YOUR NEXT QUIZ</p>
-        <h1 id="hero-title">Your quiz.<br>Your <span>AI.</span></h1>
-        <p class="hero-description">Press a shortcut and get an answer suggestion for the Kahoot question on your screen, from the model you choose.</p>
-        <div class="hero-actions">
-          <a class="button button-purple" id="install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 8.5H20M9 13.8L5 6M13.7 15L9 21" stroke="currentColor" stroke-width="1.7"/></svg>
-            Add to Chrome <span aria-hidden="true">↗</span>
-          </a>
-          <a class="text-link" href="#setup">Setup guide <span aria-hidden="true">↓</span></a>
+        <h1 id="hero-title"><span class="l">Press a key.</span> <span class="l">Get a suggested</span> <span class="l hl">answer.</span></h1>
+        <p class="lede">Kahoot AI Solver captures the quiz on your screen, asks the AI model you chose, and shows a suggestion on the page. Bring your own Gemini, OpenAI or OpenAI-compatible API key.</p>
+        <div class="cta-row">
+          <a class="btn btn-red" id="install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-chrome"/></svg>Add to Chrome</a>
+          <a class="link" href="#how-it-works">How it works <svg class="ico" aria-hidden="true"><use href="#i-down"/></svg></a>
         </div>
-        <p class="fine-print">Bring your own API key. Your AI provider may charge for usage.</p>
+        <p class="fineprint">No API key or AI credits are included. Your provider bills the usage.</p>
       </div>
 
-      <div class="hero-demo">
-        <div class="demo-toolbar">
-          <span class="demo-label"><span class="status-dot" aria-hidden="true"></span> Answer display preview</span>
-          <div class="mode-switch" role="group" aria-label="Preview display mode">
+      <div class="stage-field" role="group" aria-labelledby="stage-title">
+        <p class="sr-only" id="stage-title">Preview of how answers are displayed</p>
+        <div class="stage" id="stage" data-mode="normal">
+          <div class="stage-window">
+            <div class="win-bar" aria-hidden="true"><i></i><i></i><i></i><span class="win-url">quiz.example/practice</span></div>
+            <div class="page" aria-hidden="true">
+              <div class="q-head"><span>Question 1 of 5</span><span>Practice quiz</span></div>
+              <div class="q-card">Which planet is called the “Red Planet”?</div>
+              <div class="q-media"><svg viewBox="0 0 58 58" fill="none"><circle cx="29" cy="29" r="17" fill="#e4dff0"/><circle cx="29" cy="29" r="16" stroke="#7d6cc0" stroke-width="1.5"/><ellipse cx="29" cy="29" rx="27" ry="8" transform="rotate(-28 29 29)" stroke="#7d6cc0" stroke-width="1.5"/><circle cx="26" cy="22" r="3" fill="#c9bfe8"/><circle cx="33" cy="34" r="4" fill="#c9bfe8"/></svg></div>
+              <div class="q-answers">
+                <div class="ans ans-red"><svg class="ico" aria-hidden="true"><use href="#i-tri"/></svg><span>Earth</span></div>
+                <div class="ans ans-blue"><svg class="ico" aria-hidden="true"><use href="#i-dia"/></svg><span>Venus</span></div>
+                <div class="ans ans-yellow"><svg class="ico" aria-hidden="true"><use href="#i-cir"/></svg><span>Jupiter</span></div>
+                <div class="ans ans-green"><svg class="ico" aria-hidden="true"><use href="#i-sq"/></svg><span>Mars</span></div>
+              </div>
+              <div class="q-foot"><span>Sample player</span></div>
+              <span class="callout">Stealth: a 14 px dot</span>
+              <div class="ovl ovl-normal ovl-green" id="overlay">■ GREEN</div>
+            </div>
+          </div>
+        </div>
+        <div class="stage-controls" hidden>
+          <button class="run" type="button" id="run"><kbd>Alt</kbd><span class="plus" aria-hidden="true">+</span><kbd>Z</kbd><span class="run-label">Run the preview</span></button>
+          <div class="seg" role="group" aria-label="Display mode">
             <button type="button" data-mode="normal" aria-pressed="true">Normal</button>
             <button type="button" data-mode="stealth" aria-pressed="false">Stealth</button>
           </div>
         </div>
-        <div class="browser-preview">
-          <div class="browser-top" aria-hidden="true"><div class="window-dots"><i></i><i></i><i></i></div><span>practice quiz</span><span class="browser-menu">···</span></div>
-          <div class="quiz-preview" id="quiz-preview" data-display="normal">
-            <div class="quiz-meta"><span>SCIENCE</span><span>01 — 05</span></div>
-            <div class="planet" aria-hidden="true"><svg width="58" height="58" viewBox="0 0 58 58" fill="none"><circle cx="29" cy="29" r="17" fill="#eeeafd"/><circle cx="29" cy="29" r="16" stroke="#8271cf" stroke-width="1.5"/><ellipse cx="29" cy="29" rx="27" ry="8" transform="rotate(-28 29 29)" stroke="#8271cf" stroke-width="1.5"/><circle cx="26" cy="22" r="3" fill="#cdc4ee"/><circle cx="33" cy="34" r="4" fill="#cdc4ee"/></svg></div>
-            <h2>Which planet is called the “Red Planet”?</h2>
-            <div class="quiz-options" aria-label="Answer options in the example quiz">
-              <div class="quiz-option red"><span aria-hidden="true">▲</span> Earth</div>
-              <div class="quiz-option blue"><span aria-hidden="true">◆</span> Venus</div>
-              <div class="quiz-option yellow"><span aria-hidden="true">●</span> Jupiter</div>
-              <div class="quiz-option green"><span aria-hidden="true">■</span> Mars</div>
-            </div>
-            <div class="preview-bottom"><span>Practice quiz · sample question</span><span class="demo-result" id="demo-result" role="img" aria-label="Example answer: green, Mars">■ GREEN</span></div>
+        <p class="stage-note" id="stage-note">Simulated display with a sample question. No AI request is made and nothing is captured. In the real extension the panel stays for 15 seconds.</p>
+        <p class="sr-only" id="stage-status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="dark" id="how-it-works" aria-labelledby="how-title">
+      <div class="wrap how">
+        <div class="how-intro">
+          <h2 id="how-title">What happens when you press the key</h2>
+          <p class="lede">Four steps. Only one of them sends anything off your computer.</p>
+          <div class="local" id="privacy">
+            <h3>Kept on your device</h3>
+            <p>API keys, server URL, model choices and display mode live in <code>chrome.storage.local</code>. They are not synced, and the extension adds no encryption of its own. Screenshots and answers are not saved.</p>
+            <p>Use an HTTPS address for a compatible server. Plain HTTP sends your key and screenshots unencrypted.</p>
+            <a class="link" href="privacy.html">Read the privacy policy <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></a>
           </div>
         </div>
-        <div class="demo-caption"><span><kbd>Alt</kbd> + <kbd>Z</kbd> <span class="caption-arrow" aria-hidden="true">→</span> capture screen <span class="caption-arrow" aria-hidden="true">→</span> AI suggestion</span><span class="mode-duration" id="mode-duration">Shown for 15 s</span></div>
-        <p class="demo-disclaimer" id="demo-note" aria-live="polite">This only shows how answers are displayed. It makes no AI requests and captures no screen.</p>
-      </div>
-    </section>
-
-    <div class="provider-strip container" aria-label="Supported APIs">
-      <p>No model is built in. <strong>Connect the one you want.</strong></p>
-      <div class="provider-names"><span>Gemini</span><span>OpenAI</span><span class="compatible-label">OpenAI-compatible <small>Your own API server</small></span></div>
-    </div>
-
-    <section class="models-section container section-space" aria-labelledby="models-title">
-      <div class="section-intro">
-        <p class="eyebrow">YOUR MODELS, YOUR SHORTCUTS</p>
-        <h2 id="models-title">Pick your model.<br>Press your shortcut.</h2>
-        <p>Models load from the APIs you connect. Give each of the three slots its own model, and refresh the list when new models appear.</p>
-        <a class="text-link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver#setup" target="_blank" rel="noopener noreferrer">How to connect a model <span aria-hidden="true">↗</span></a>
-      </div>
-      <div class="shortcut-board">
-        <div class="board-heading"><span>Your model slots</span><span>Chosen and triggered by you</span></div>
-        <div class="shortcut-row"><span class="slot-number">01</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>Z</kbd></div><span class="slot-description">Your first model</span><span class="slot-shape triangle" aria-hidden="true"></span></div>
-        <div class="shortcut-row"><span class="slot-number">02</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>X</kbd></div><span class="slot-description">Your second model</span><span class="slot-shape diamond" aria-hidden="true"></span></div>
-        <div class="shortcut-row"><span class="slot-number">03</span><div><kbd>Alt</kbd><span class="plus">+</span><kbd>C</kbd></div><span class="slot-description">Your third model</span><span class="slot-shape circle" aria-hidden="true"></span></div>
-        <p>On Mac, use <strong>Option ⌥</strong> instead of Alt. The solve buttons in the popup run the same models.</p>
-      </div>
-    </section>
-
-    <section class="formats-section section-space" aria-labelledby="formats-title">
-      <div class="container">
-        <div class="section-heading"><div><p class="eyebrow">BEYOND FOUR COLORS</p><h2 id="formats-title">Colors, text,<br>order and numbers.</h2></div><p>From color choices to typed text and numbers. Suggestions are based on the question and options visible on screen.</p></div>
-        <div class="format-list">
-          <div class="format-item"><div class="format-preview color-preview" aria-hidden="true"><span>▲</span><span>◆</span><span>●</span><span>■</span></div><h3>One or more options</h3><p>Single choice, true/false, multiple correct answers</p></div>
-          <div class="format-item"><div class="format-preview text-preview" aria-hidden="true">photosynthesis<span class="text-cursor"></span></div><h3>Typed answers</h3><p>Suggested text</p></div>
-          <div class="format-item"><div class="format-preview order-preview" aria-hidden="true"><span>1</span><i>→</i><span>2</span><i>→</i><span>3</span></div><h3>Ordered answers</h3><p>Suggested order for puzzle options</p></div>
-          <div class="format-item"><div class="format-preview number-preview" aria-hidden="true"><span>42</span><div><i></i></div></div><h3>Number answers</h3><p>Suggested numbers for sliders</p></div>
-        </div>
-        <p class="section-note">AI suggestions can be wrong, and not every quiz format is supported. You choose the answer and submit it yourself.</p>
-      </div>
-    </section>
-
-    <section class="setup-section container section-space" id="setup" aria-labelledby="setup-title">
-      <div class="setup-main"><p class="eyebrow">LET’S SET YOU UP</p><h2 id="setup-title">Connect once.</h2>
-        <ol class="setup-steps">
-          <li><span class="step-index" aria-hidden="true">01</span><div><h3>Install, then open settings</h3><p>Click the extension icon, then the <b>···</b> button at the top right. The first screen is labeled “Youtube Ad Blocker”, but the extension doesn’t block ads.</p></div></li>
-          <li><span class="step-index" aria-hidden="true">02</span><div><h3>Connect your API key</h3><p>Enter a Gemini key, an OpenAI key, or both, then click <b>Save Keys &amp; Reload Models</b>. For a compatible server, enter its URL including <code>/v1</code> and approve Chrome’s access prompt.</p><div class="key-links"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini key <span aria-hidden="true">↗</span></a><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">Get an OpenAI key <span aria-hidden="true">↗</span></a></div></div></li>
-          <li><span class="step-index" aria-hidden="true">03</span><div><h3>Pick models and try a practice quiz</h3><p>Assign a model that accepts image input to each slot you plan to use. With the question and options visible, press the shortcut to see a suggestion.</p></div></li>
+        <ol class="steps">
+          <li>
+            <h3>You press Alt + Z, X or C</h3>
+            <p>On Mac it is Option. The solve buttons in the popup work too. Each key runs the model you assigned to that slot.</p>
+            <span class="where">In your browser</span>
+          </li>
+          <li>
+            <h3>It captures the visible tab</h3>
+            <p>Only the visible area of the active tab, and only when you trigger it. Anything on screen can be included, not just the question.</p>
+            <span class="where">In your browser</span>
+          </li>
+          <li class="out">
+            <h3>Your provider answers</h3>
+            <p>The screenshot goes straight from your browser to Gemini, OpenAI or your own server, with your API key. No server run by the developer sits in between. The provider bills the usage and applies its own retention rules.</p>
+            <span class="where">Leaves your browser</span>
+          </li>
+          <li>
+            <h3>A suggestion appears on the page</h3>
+            <p>A panel for 15 seconds, or a small corner indicator for 8, depending on the display mode. It never clicks or submits anything. You check the suggestion and answer yourself.</p>
+            <span class="where">In your browser</span>
+          </li>
         </ol>
       </div>
-      <figure class="settings-figure"><div class="settings-frame"><img src="assets/settings.webp" width="564" height="1238" loading="lazy" alt="The extension’s real AI settings screen, with API key fields, an answer display selector, an audio/video context field and three model slots."></div><figcaption><span class="status-dot" aria-hidden="true"></span> Real settings screen · API keys left blank</figcaption></figure>
     </section>
 
-    <section class="privacy-section" id="privacy" aria-labelledby="privacy-title">
-      <div class="container privacy-grid">
-        <div><p class="eyebrow">KNOW WHAT YOU SHARE</p><h2 id="privacy-title">From your browser<br>to the AI you chose.</h2><p class="privacy-summary">No developer-run server sits in between. Requests go straight to the provider you connect.</p><a class="text-link" href="privacy.html">Privacy policy <span aria-hidden="true">↗</span></a></div>
-        <div class="privacy-details">
-          <div class="data-flow" aria-label="Data flow: from your browser to the AI provider you chose"><span>Your browser<small>Screenshot + optional context</small></span><span class="flow-arrow" aria-hidden="true">→</span><span>Your chosen AI<small>Gemini · OpenAI · compatible API</small></span></div>
-          <dl><div><dt>Keys and settings stay local</dt><dd>API keys and model choices are stored in <code>chrome.storage.local</code> in your browser profile. That is ordinary browser storage, not extra encryption added by the extension.</dd></div><div><dt>The visible screen is sent when you run it</dt><dd>A shortcut or popup button captures the visible area of the current tab. Don’t run it while private information is on screen.</dd></div><div><dt>Cost and data policies come from your provider</dt><dd>API charges and retention rules depend on the service you connect. Use a trusted HTTPS address for compatible servers.</dd></div></dl>
+    <section class="models wrap" id="models" aria-labelledby="models-title">
+      <figure class="keyboard">
+        <div class="keys">
+          <kbd class="key key-mod">Alt</kbd>
+          <kbd class="key">Z</kbd>
+          <kbd class="key">X</kbd>
+          <kbd class="key">C</kbd>
+        </div>
+        <div class="slots">
+          <span class="slot-mac">Option on Mac</span>
+          <span class="slot"><svg class="ico slot-red" aria-hidden="true"><use href="#i-tri"/></svg>Slot 1</span>
+          <span class="slot"><svg class="ico slot-blue" aria-hidden="true"><use href="#i-dia"/></svg>Slot 2</span>
+          <span class="slot"><svg class="ico slot-yellow" aria-hidden="true"><use href="#i-cir"/></svg>Slot 3</span>
+        </div>
+        <figcaption>Hold Alt, then press Z, X or C. Each slot runs the model you picked for it.</figcaption>
+      </figure>
+      <div class="models-copy">
+        <h2 id="models-title">Three keys, three models.</h2>
+        <p class="lede">Connect Gemini, OpenAI or any OpenAI-compatible server. The extension loads the model list from your API, so no model is hardcoded, and it leaves out models that report no image support.</p>
+        <p class="lede">Refresh the list when a provider ships something new. A listed model can still reject an image request, so try each slot on a practice quiz.</p>
+        <a class="link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver#setup" target="_blank" rel="noopener noreferrer">How to connect a model <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
+      </div>
+    </section>
+
+    <section class="formats" id="formats" aria-labelledby="formats-title">
+      <div class="wrap">
+        <div class="formats-head">
+          <h2 id="formats-title">Answers beyond the four colors.</h2>
+          <p class="lede">The suggestion is based on the question and options visible in the screenshot. These are sample answers, drawn the way the extension displays them.</p>
+        </div>
+        <ol class="fmt-list">
+          <li class="fmt">
+            <h3>One answer</h3>
+            <p>Single choice and true/false. Normal mode colors the panel to match the answer. Stealth shows a dot.</p>
+            <div class="fmt-demo"><div class="demo-item"><div class="ovl ovl-static ovl-normal ovl-green">■ GREEN</div><span>Normal</span></div><div class="demo-item"><div class="ovl ovl-static ovl-stealth ovl-green">■</div><span>Stealth</span></div></div>
+          </li>
+          <li class="fmt">
+            <h3>Several answers</h3>
+            <p>For questions with more than one correct option.</p>
+            <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">Select all: ▲ ■&#10;red, green</div></div>
+          </li>
+          <li class="fmt">
+            <h3>Typed text</h3>
+            <p>For type-your-answer questions.</p>
+            <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">photosynthesis</div></div>
+          </li>
+          <li class="fmt">
+            <h3>An order</h3>
+            <p>For puzzle questions where you arrange the options.</p>
+            <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">1. Seed&#10;2. Sprout&#10;3. Flower</div></div>
+          </li>
+          <li class="fmt">
+            <h3>A number</h3>
+            <p>For slider questions.</p>
+            <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">42</div></div>
+          </li>
+          <li class="fmt">
+            <h3>Not enough on screen</h3>
+            <p>When the screenshot lacks what the question needs, the extension says so instead of guessing.</p>
+            <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">Cannot determine: Missing information</div></div>
+          </li>
+        </ol>
+        <p class="formats-note">AI suggestions can be wrong, and not every quiz format is supported.</p>
+      </div>
+    </section>
+
+    <section class="setup wrap" id="setup" aria-labelledby="setup-title">
+      <div class="setup-main">
+        <h2 id="setup-title">Set it up once.</h2>
+        <ol class="setup-steps">
+          <li>
+            <div><h3>Install, then open settings</h3><p>Click the extension icon, then the <b>···</b> button at the top right. The first screen is labeled “Youtube Ad Blocker”, but the extension does not block ads.</p></div>
+          </li>
+          <li>
+            <div><h3>Connect your API</h3><p>Enter a Gemini key, an OpenAI key, or both, then click <b>Save Keys &amp; Reload Models</b>. For a compatible server, enter its URL including <code>/v1</code> and approve Chrome’s access prompt.</p>
+              <div class="key-links"><a class="link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini key <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a><a class="link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">Get an OpenAI key <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a></div></div>
+          </li>
+          <li>
+            <div><h3>Pick a model for each slot</h3><p>Choose models that accept image input. Open a practice quiz, make sure the question and options are visible, and press the shortcut.</p></div>
+          </li>
+        </ol>
+      </div>
+      <figure class="shot">
+        <img src="assets/settings.webp" width="564" height="1238" loading="lazy" alt="The extension’s settings screen with fields for a Gemini key, an OpenAI key and a compatible server URL, an answer display selector, an optional audio/video context field and three model slots.">
+        <figcaption>The extension’s real settings screen, with the API key fields left blank.</figcaption>
+      </figure>
+    </section>
+
+    <section class="faq wrap" aria-labelledby="faq-title">
+      <div class="faq-intro">
+        <h2 id="faq-title">Before you install</h2>
+        <a class="link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">Questions or bug reports <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
+      </div>
+      <div class="faq-list">
+        <details><summary>Does it include an API key or AI credits?</summary><p>No. You connect your own Gemini, OpenAI or compatible API account. Your provider bills you for the usage.</p></details>
+        <details><summary>Does it click or submit answers for me?</summary><p>No. It only shows a suggestion on the page. You check it, pick the option and submit it yourself. Use it for learning, practice and research, and only where AI help is allowed.</p></details>
+        <details><summary>How do Normal and Stealth differ?</summary><p>Normal shows a readable panel for 15 seconds. Stealth shows a small corner dot for single-choice answers, or a small text box for richer answers, for 8 seconds. Both can appear in screenshots and screen sharing.</p></details>
+        <details><summary>Does it work for audio or video questions?</summary><p>It does not record audio or upload video. Paste a transcript, captions or your own notes into the Audio/video context field in settings, then click a solve button in the popup. The text is sent with the screenshot, is not saved, and is cleared when the popup closes. Keyboard shortcuts send only the screenshot.</p></details>
+        <details><summary>Can I use every model in the list?</summary><p>Not necessarily. Image-input support and API compatibility depend on the provider, so a listed model may still reject a request. A compatible server must support <code>/models</code> and a <code>/chat/completions</code> endpoint that accepts image input. If the screen does not show what the question needs, or the model misreads it, you will not get a reliable answer.</p></details>
+      </div>
+    </section>
+
+    <section class="wrap closing-wrap" aria-labelledby="closing-title">
+      <div class="closing">
+        <h2 id="closing-title">Try it on your next practice quiz.</h2>
+        <div class="closing-actions">
+          <a class="btn btn-white" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-chrome"/></svg>Add to Chrome</a>
+          <a class="link link-light" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">View the source <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
         </div>
       </div>
     </section>
-
-    <section class="faq-section container section-space" aria-labelledby="faq-title">
-      <div class="section-intro"><p class="eyebrow">A FEW THINGS TO KNOW</p><h2 id="faq-title">Questions before <br>you install.</h2><a class="text-link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">Questions or bug reports <span aria-hidden="true">↗</span></a></div>
-      <div class="faq-list">
-        <details><summary>Does it include an API key or AI credits?<span aria-hidden="true">+</span></summary><p>No. You connect your own Gemini, OpenAI or compatible API account. Your provider bills you for API usage, and the extension includes no key or credits.</p></details>
-        <details><summary>Does it click or submit answers for me?<span aria-hidden="true">+</span></summary><p>No. It only shows a suggestion on the page. You check it, pick the option and submit it yourself. Use it for learning, practice and research, and only where AI help is allowed.</p></details>
-        <details><summary>How do Normal and Stealth differ?<span aria-hidden="true">+</span></summary><p>Normal shows a readable panel for 15 seconds. Stealth shows a small corner shape for single-choice answers, or a small text box for richer answers, for 8 seconds. Both can appear in screenshots and screen sharing.</p></details>
-        <details><summary>Does it work for audio or video questions?<span aria-hidden="true">+</span></summary><p>It doesn’t record audio or upload video. Paste a transcript, captions or your own notes into the Audio/video context field in settings, then click a solve button in the popup. The text is sent with the screenshot, isn’t saved, and is cleared when the popup closes. Keyboard shortcuts send only the screenshot.</p></details>
-        <details><summary>Can I use every model in the list?<span aria-hidden="true">+</span></summary><p>Not necessarily. Image-input support and API compatibility depend on the provider, so a listed model may still reject a request. A compatible server must support <code>/models</code> and a <code>/chat/completions</code> endpoint that accepts image input. If the screen doesn’t show what’s needed, or the model misreads it, you won’t get a reliable answer.</p></details>
-      </div>
-    </section>
-
-    <section class="closing container" aria-labelledby="closing-title"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2 id="closing-title">Try it on your<br>next practice quiz.</h2></div><div><a class="button button-purple" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">Add to Chrome <span aria-hidden="true">↗</span></a><p class="fine-print">Works with your own API key.</p></div></section>
   </main>
 
-  <footer class="site-footer container"><div class="footer-top"><a class="brand" href="./"><img src="assets/logo.svg" width="32" height="32" alt=""><span>Kahoot <b>AI Solver</b></span></a><div><a href="privacy.html">Privacy policy</a><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">Source code ↗</a><a href="assets/logo.svg" download="kahoot-ai-solver-logo.svg">Logo (SVG) ↓</a></div></div><p>Independent project by Ketchio-dev. Not affiliated with or endorsed by Kahoot!, Google or OpenAI. Built for learning, practice and research; please follow the AI rules of your school and quiz host.</p></footer>
+  <footer class="site-footer wrap">
+    <div class="footer-top">
+      <a class="brand" href="./" aria-label="Kahoot AI Solver home"><img src="assets/logo.svg" width="32" height="32" alt=""><span>Kahoot <b>AI Solver</b></span></a>
+      <nav aria-label="Footer"><a href="privacy.html">Privacy policy</a><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver" target="_blank" rel="noopener noreferrer">Source code</a><a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">Report an issue</a><a href="assets/logo.svg" download="kahoot-ai-solver-logo.svg">Logo (SVG)</a></nav>
+    </div>
+    <p class="legal">Independent project by Ketchio-dev. Not affiliated with or endorsed by Kahoot!, Google or OpenAI. Built for learning, practice and research; please follow the AI rules of your school and quiz host.</p>
+    <p class="made">Made by Ketchio-dev <svg class="ketchup" viewBox="0 0 16 24" width="10" height="15" aria-hidden="true" focusable="false"><path d="M6.3 1h3.4l.6 3.2H5.7z" fill="#1c2033"/><rect x="4.9" y="4" width="6.2" height="2.4" rx=".7" fill="#8f1717"/><path d="M4.3 6.4h7.4c1.3 1.2 2.1 2.7 2.1 4.6v9.1c0 1.7-1.3 2.9-3 2.9H5.2c-1.7 0-3-1.2-3-2.9V11c0-1.9.8-3.4 2.1-4.6z" fill="#c72b2b"/><rect x="4.2" y="12" width="7.6" height="5.6" rx="1" fill="#fff" opacity=".92"/></svg></p>
+  </footer>
 </body>
 </html>

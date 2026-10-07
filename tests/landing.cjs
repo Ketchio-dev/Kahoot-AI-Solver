@@ -67,6 +67,33 @@ test('extension icons are PNGs at the sizes declared in the manifest', () => {
   }
 });
 
+test('the stylesheet only references local files, and they exist', () => {
+  const css = read('docs', 'site.css');
+  const urls = [...css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)].map((match) => match[1]);
+  assert.ok(urls.length > 0, 'expected the self-hosted font to be referenced');
+  for (const url of urls) {
+    assert.doesNotMatch(url, /^(https?:)?\/\//, 'remote resource in site.css: ' + url);
+    assert.ok(fs.existsSync(path.join(docs, url)), 'missing file for url(' + url + ')');
+  }
+  assert.ok(fs.existsSync(path.join(docs, 'assets', 'fonts', 'OFL.txt')), 'font license file is missing');
+});
+
+test('pages load no third-party scripts, styles, fonts or images', () => {
+  for (const page of pages) {
+    const html = read('docs', page);
+    assert.doesNotMatch(html, /<(script|link|img|source|iframe)\b[^>]*\s(?:src|href)="(?:https?:)?\/\//, page + ' loads a remote resource');
+  }
+});
+
+test('the privacy page reuses the site header and footer', () => {
+  const index = read('docs', 'index.html');
+  const privacy = read('docs', 'privacy.html');
+  const brand = (html) => (html.match(/<a class="brand"[\s\S]*?<\/a>/) || [''])[0];
+  assert.ok(brand(index).length > 0 && brand(index) === brand(privacy), 'header brand markup differs');
+  const footer = (html) => (html.match(/<footer class="site-footer[\s\S]*?<\/footer>/) || [''])[0];
+  assert.ok(footer(index).length > 0 && footer(index) === footer(privacy), 'footer markup differs');
+});
+
 test('pages declare language, title, viewport, one h1, and image attributes', () => {
   for (const page of pages) {
     const html = read('docs', page);
