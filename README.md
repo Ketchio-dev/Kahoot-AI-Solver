@@ -1,6 +1,8 @@
 # Kahoot AI Solver — Smart Assistant
 
-A Chrome extension that captures the current tab, sends it to a vision-capable AI model, and tells you which Kahoot answer to pick.
+A Chrome extension that captures the current tab, sends it to a vision-capable AI model, and shows a suggested Kahoot answer.
+
+[Website and interactive preview](https://ketchio-dev.github.io/Kahoot-AI-Solver/) · [Privacy policy](https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html) · [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp)
 
 Model IDs are **not hardcoded**. The extension queries the Gemini and OpenAI model endpoints with your own API keys and lets you assign any of the returned models to a keyboard shortcut.
 
@@ -99,7 +101,7 @@ node --test tests/regression.cjs tests/landing.cjs
 
 ## Website and logo
 
-`docs/` holds a static English landing page. GitHub Pages can serve it from the `main` branch and `/docs` folder. `docs/assets/logo.svg` is the logo source. `tools/build-site.cjs` renders `icon16.png`, `icon48.png` and `icon128.png` from it and rebuilds `docs/privacy.html` from `PRIVACY.md`:
+The [English landing page](https://ketchio-dev.github.io/Kahoot-AI-Solver/) is published from `docs/` through GitHub Pages (`main`, `/docs`). `docs/assets/logo.svg` is the logo source. `tools/build-site.cjs` renders `icon16.png`, `icon48.png` and `icon128.png` from it, renders the 1200 × 630 sharing image from `docs/assets/social-card.svg`, and rebuilds `docs/privacy.html` from `PRIVACY.md`. The sharing card uses outlined type, so rendering it does not depend on installed fonts:
 
 ```bash
 npm install --no-save @resvg/resvg-js

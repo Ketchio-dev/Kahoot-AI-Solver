@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Rebuilds the generated website files:
 //   docs/assets/logo.svg -> icon16.png, icon48.png, icon128.png
+//   docs/assets/social-card.svg -> docs/assets/social-card.png
 //   PRIVACY.md           -> docs/privacy.html
-// Icon rendering uses @resvg/resvg-js, which is not a project dependency:
+// SVG rendering uses @resvg/resvg-js, which is not a project dependency:
 //   npm install --no-save @resvg/resvg-js
 //   node tools/build-site.cjs
 const fs = require('node:fs');
@@ -18,6 +19,12 @@ function buildIcons() {
   for (const size of [16, 48, 128]) {
     write('icon' + size + '.png', new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng());
   }
+}
+
+function buildSocialCard() {
+  const { Resvg } = require('@resvg/resvg-js');
+  const svg = read('docs/assets/social-card.svg');
+  write('docs/assets/social-card.png', new Resvg(svg, { font: { loadSystemFonts: false } }).render().asPng());
 }
 
 const escapeHtml = (text) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -64,6 +71,20 @@ function buildPrivacyPage() {
     '<meta name="theme-color" content="#fbfaf7">',
     '<meta name="description" content="How Kahoot AI Solver handles API keys, screenshots, optional context and local settings.">',
     '<title>Privacy policy — Kahoot AI Solver</title>',
+    '<link rel="canonical" href="https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html">',
+    '<meta property="og:type" content="website">',
+    '<meta property="og:site_name" content="Kahoot AI Solver">',
+    '<meta property="og:title" content="Privacy policy — Kahoot AI Solver">',
+    '<meta property="og:description" content="How Kahoot AI Solver handles API keys, screenshots, optional context and local settings.">',
+    '<meta property="og:url" content="https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html">',
+    '<meta property="og:image" content="https://ketchio-dev.github.io/Kahoot-AI-Solver/assets/social-card.png">',
+    '<meta property="og:image:type" content="image/png">',
+    '<meta property="og:image:width" content="1200">',
+    '<meta property="og:image:height" content="630">',
+    '<meta property="og:image:alt" content="Kahoot AI Solver with a simulated quiz and green answer suggestion. Bring your own API key.">',
+    '<meta name="twitter:card" content="summary_large_image">',
+    '<meta name="twitter:image" content="https://ketchio-dev.github.io/Kahoot-AI-Solver/assets/social-card.png">',
+    '<meta name="twitter:image:alt" content="Kahoot AI Solver with a simulated quiz and green answer suggestion. Bring your own API key.">',
     '<link rel="icon" type="image/svg+xml" href="assets/logo.svg">',
     '<link rel="preload" href="assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>',
     '<link rel="stylesheet" href="site.css">',
@@ -83,5 +104,6 @@ function buildPrivacyPage() {
 }
 
 buildIcons();
+buildSocialCard();
 buildPrivacyPage();
-console.log('Rebuilt icon16.png, icon48.png, icon128.png and docs/privacy.html');
+console.log('Rebuilt extension icons, docs/assets/social-card.png and docs/privacy.html');

@@ -95,6 +95,9 @@ h1 .hl { color: var(--red); }
 .hero .lede { margin-bottom: 32px; }
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
 .fineprint { margin-top: 20px; font-size: 14px; color: var(--muted); max-width: 34em; }
+.release-note { margin-top: 8px; font-size: 14px; color: var(--muted); }
+.release-note a { text-decoration: underline; text-underline-offset: 3px; }
+.release-note a:hover { color: var(--red-deep); }
 
 /* Preview stage */
 .stage-field { background: var(--red); color: #fff; border-radius: 28px; padding: clamp(14px, 2.4vw, 32px); min-width: 0; }

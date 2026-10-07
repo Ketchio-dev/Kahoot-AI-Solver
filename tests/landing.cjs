@@ -43,6 +43,52 @@ test('install buttons point to the Chrome Web Store listing', () => {
   assert.deepEqual([...links], ['https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp']);
 });
 
+test('the release link names the current repository version without a pending-review claim', () => {
+  const html = read('docs', 'index.html');
+  const note = html.match(/<p class="release-note">([\s\S]*?)<\/p>/)?.[1];
+  assert.ok(note, 'release note is missing');
+  assert.ok(note.includes('v' + manifest.version + ' is available on the Chrome Web Store.'), 'release version differs from manifest');
+  assert.match(note, /href="https:\/\/chromewebstore\.google\.com\/detail\/fgpbceoplppnfodmjcengikbefngpjfp"/);
+  assert.doesNotMatch(note, /pending|awaiting|under review/i);
+});
+
+test('sharing metadata uses canonical public URLs and a 1200 by 630 PNG', () => {
+  const base = 'https://ketchio-dev.github.io/Kahoot-AI-Solver/';
+  const imageUrl = base + 'assets/social-card.png';
+  for (const page of pages) {
+    const html = read('docs', page);
+    const url = page === 'index.html' ? base : base + page;
+    const meta = (name) => html.match(new RegExp('<meta (?:property|name)="' + name + '" content="([^"]+)"'))?.[1];
+    assert.equal(html.match(/<link rel="canonical" href="([^"]+)"/)?.[1], url, page);
+    assert.equal(meta('og:url'), url, page);
+    assert.ok(meta('og:title'), page + ': missing sharing title');
+    assert.ok(meta('og:description'), page + ': missing sharing description');
+    assert.equal(meta('og:image'), imageUrl, page);
+    assert.equal(meta('twitter:image'), imageUrl, page);
+    assert.equal(meta('og:image:type'), 'image/png', page);
+    assert.equal(meta('og:image:width'), '1200', page);
+    assert.equal(meta('og:image:height'), '630', page);
+    assert.equal(meta('twitter:card'), 'summary_large_image', page);
+    assert.match(meta('og:image:alt'), /simulated quiz/, page);
+    assert.equal(meta('twitter:image:alt'), meta('og:image:alt'), page);
+  }
+  const png = fs.readFileSync(path.join(docs, 'assets', 'social-card.png'));
+  assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  assert.equal(png.readUInt32BE(16), 1200);
+  assert.equal(png.readUInt32BE(20), 630);
+  const source = read('docs', 'assets', 'social-card.svg');
+  assert.match(source, /<title>/);
+  assert.match(source, /<desc>/);
+  assert.doesNotMatch(source, /<text\b/, 'sharing source must use outlined type for portable rendering');
+  assert.doesNotMatch(source, /(?:href|src)="(?:https?:)?\/\//, 'sharing source loads a remote asset');
+});
+
+test('the README links to the published website and privacy policy', () => {
+  const readme = read('README.md');
+  assert.ok(readme.includes('(https://ketchio-dev.github.io/Kahoot-AI-Solver/)'));
+  assert.ok(readme.includes('(https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html)'));
+});
+
 test('the demo script is a static preview without network or storage access', () => {
   assert.doesNotMatch(read('docs', 'site.js'), /fetch\(|XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage|chrome\./);
 });
@@ -81,7 +127,11 @@ test('the stylesheet only references local files, and they exist', () => {
 test('pages load no third-party scripts, styles, fonts or images', () => {
   for (const page of pages) {
     const html = read('docs', page);
-    assert.doesNotMatch(html, /<(script|link|img|source|iframe)\b[^>]*\s(?:src|href)="(?:https?:)?\/\//, page + ' loads a remote resource');
+    // Canonical URLs describe the page; unlike stylesheets or preloads, they are not fetched.
+    for (const tag of html.match(/<(?:script|link|img|source|iframe)\b[^>]*>/g) || []) {
+      if (/^<link\b/.test(tag) && /\brel="canonical"/.test(tag)) continue;
+      assert.doesNotMatch(tag, /\s(?:src|href)="(?:https?:)?\/\//, page + ' loads a remote resource: ' + tag);
+    }
   }
 });
 
