@@ -83,6 +83,31 @@ test('sharing metadata uses canonical public URLs and a 1200 by 630 PNG', () => 
   assert.doesNotMatch(source, /(?:href|src)="(?:https?:)?\/\//, 'sharing source loads a remote asset');
 });
 
+test('Ketchio maker links stay separate from the product home link on both pages', () => {
+  for (const page of pages) {
+    const html = read('docs', page);
+    const header = html.match(/<header class="site-header[\s\S]*?<\/header>/)?.[0];
+    assert.ok(header, page + ': missing header');
+    const product = header.match(/<a class="brand"[^>]*>[\s\S]*?<\/a>/)?.[0];
+    assert.match(product, /href="\.\/"/, page + ': product home link changed');
+    assert.match(product, /Kahoot <b>AI Solver<\/b>/, page + ': product name changed');
+    assert.doesNotMatch(product, /Ketchio/, page + ': maker link must not be nested inside the product link');
+    const makers = [...html.matchAll(/<a class="maker maker-(header|footer)"[^>]*>[\s\S]*?<\/a>/g)];
+    assert.equal(makers.length, 2, page + ': expected header and footer maker links');
+    for (const [tag, position] of makers) {
+      assert.match(tag, /href="https:\/\/ketchio\.com\/"/, page + ': maker destination');
+      assert.match(tag, /target="_blank" rel="noopener noreferrer"/, page + ': maker link safety');
+      assert.match(tag, /src="assets\/ketchup\.svg"/, page + ': missing local signature');
+      assert.ok(tag.includes(position === 'header' ? 'by <b>Ketchio</b>' : 'Made by <b>Ketchio</b>'));
+    }
+    assert.match(html, /name="author" content="Ketchio"/, page);
+    assert.match(html, /property="og:site_name" content="Kahoot AI Solver by Ketchio"/, page);
+  }
+  const card = read('docs', 'assets', 'social-card.svg');
+  assert.match(card, /id="ketchio-signature" aria-label="by Ketchio"/);
+  assert.match(card, /<title>Kahoot AI Solver by Ketchio/);
+});
+
 test('the README links to the published website and privacy policy', () => {
   const readme = read('README.md');
   assert.ok(readme.includes('(https://ketchio-dev.github.io/Kahoot-AI-Solver/)'));
@@ -138,8 +163,9 @@ test('pages load no third-party scripts, styles, fonts or images', () => {
 test('the privacy page reuses the site header and footer', () => {
   const index = read('docs', 'index.html');
   const privacy = read('docs', 'privacy.html');
-  const brand = (html) => (html.match(/<a class="brand"[\s\S]*?<\/a>/) || [''])[0];
-  assert.ok(brand(index).length > 0 && brand(index) === brand(privacy), 'header brand markup differs');
+  const header = (html) => (html.match(/<header class="site-header[\s\S]*?<\/header>/) || [''])[0];
+  const homeHeader = header(index).replace(/href="#([^"]+)"/g, 'href="./#$1"');
+  assert.ok(homeHeader.length > 0 && homeHeader === header(privacy), 'header product or maker markup differs');
   const footer = (html) => (html.match(/<footer class="site-footer[\s\S]*?<\/footer>/) || [''])[0];
   assert.ok(footer(index).length > 0 && footer(index) === footer(privacy), 'footer markup differs');
 });
