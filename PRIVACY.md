@@ -1,6 +1,6 @@
 # Privacy policy — Kahoot AI Solver
 
-Last updated: October 6, 2026. Applies to extension version 1.4.0.
+Last updated: October 7, 2026. Applies to extension versions 1.4.0 and 1.4.1.
 
 Kahoot AI Solver is an independent Chrome extension maintained by Ketchio-dev. It suggests answers to visible quiz questions using the AI API account and model you select. It does not operate a developer backend for processing screenshots or storing your API keys.
 
@@ -33,7 +33,7 @@ Local settings remain until you change or remove them, clear the extension's dat
 
 ## Your controls
 
-Open AI settings using the extension icon and the `···` button. You can replace or clear API keys and save the changes, change your server URL, change or clear model selections, and choose the answer display mode. You can remove custom-server access through Chrome's extension permissions or uninstall the extension to remove its local stored settings. Revoke API keys through the issuing provider if you no longer want them used.
+Open AI settings using the extension icon, then the `···` button in v1.4.0 or the **Settings** button in v1.4.1. You can replace or clear API keys and save the changes, change your server URL, change or clear model selections, and choose the answer display mode. You can remove custom-server access through Chrome's extension permissions or uninstall the extension to remove its local stored settings. Revoke API keys through the issuing provider if you no longer want them used.
 
 Deleting local settings or uninstalling does not delete requests already received by an AI provider. Contact the selected provider or server operator for their data access and deletion options.
 

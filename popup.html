@@ -3,9 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Youtube Ad Blocker Settings</title>
+  <title>Kahoot AI Solver — Settings</title>
   <style>
     body {
+      position: relative;
       width: 360px;
       color: #243047;
       background: #f7f9fc;
@@ -87,6 +88,14 @@
       display: none;
     }
 
+    #home-view { text-align: center; padding-top: 38px; }
+    #home-view img { display: block; margin: 0 auto 16px; }
+    #home-view h2 { font-size: 22px; margin-bottom: 8px; }
+    #home-view p { font-size: 13px; line-height: 1.6; color: #667085; }
+    .shortcuts { display: flex; justify-content: center; gap: 10px; margin: 22px 0; }
+    kbd { border: 1px solid #ccd3df; border-bottom-width: 3px; border-radius: 5px; padding: 7px 10px; background: white; font-size: 12px; }
+    #toggleViewBtn { position: absolute; top: 10px; right: 10px; width: auto; min-height: 28px; padding: 4px 8px; background: none; color: #243047; font-size: 12px; }
+
     #modelStatus {
       margin-top: 6px;
       font-size: 11px;
@@ -97,31 +106,20 @@
 </head>
 
 <body>
-  <!-- Settings Toggle Button -->
-  <button id="toggleViewBtn"
-    style="position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; color: #bbb; font-size: 14px; width: auto; padding: 0 4px;">···</button>
+  <button id="toggleViewBtn" aria-label="Open AI settings" aria-expanded="false" aria-controls="settings-view">Settings</button>
 
-  <!-- FAKE VIEW: Default -->
-  <div id="fake-view" style="text-align: center; padding-top: 20px;">
-    <h2 style="font-size: 18px; margin-bottom: 20px;">Youtube Ad Blocker</h2>
-
-    <div
-      style="background-color: #4CAF50; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 34px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-      ON
-    </div>
-
-    <h3 style="color: #4CAF50; margin: 0;">PROTECTION ACTIVE</h3>
-    <p style="color: #666; font-size: 12px; margin-top: 5px;">0 Ads Blocked today</p>
-
-    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-      <label style="color: #999; font-size: 11px;">BLOCKING LEVEL: AGGRESSIVE</label>
-    </div>
+  <div id="home-view">
+    <img src="icon128.png" alt="" width="64" height="64">
+    <h2>Kahoot AI Solver</h2>
+    <p>Ask your AI model about the question on screen.</p>
+    <div class="shortcuts" aria-label="Model shortcuts"><kbd>Alt+Z</kbd><kbd>Alt+X</kbd><kbd>Alt+C</kbd></div>
+    <p>Connect your API key in <b>Settings</b>, then assign a model to each shortcut. Use Option on Mac.</p>
+    <small>Review the suggestion before answering. Use AI only where it is allowed.</small>
   </div>
 
-  <!-- REAL VIEW: Hidden by default -->
-  <div id="real-view" style="display: none;">
-    <h2>Kahoot AI · Settings</h2>
-    <p style="font-size: 12px; color: #667085;">Connect your API, then choose a model for each shortcut.</p>
+  <div id="settings-view" style="display: none; padding-top: 30px;">
+    <h2>AI settings</h2>
+    <p style="font-size: 12px; color: #667085;">Add an API key, then choose a model for each shortcut.</p>
     <div class="form-group">
       <label for="apiKey">Gemini API Key:</label>
       <input type="password" id="apiKey" placeholder="Enter your Gemini API Key">
@@ -141,14 +139,14 @@
     <div class="form-group">
       <label for="displayMode">Answer display</label>
       <select id="displayMode"><option value="normal">Normal · readable answer panel</option><option value="stealth">Stealth · compact corner indicator</option></select>
-      <small>Stealth is compact, not invisible in screenshots or screen sharing.</small>
+      <small>Both displays are visible in screenshots and screen sharing.</small>
     </div>
     <div class="form-group">
       <label for="mediaContext">Audio/video context · optional</label>
-      <textarea id="mediaContext" maxlength="6000" rows="3" placeholder="Paste a transcript, captions, or what happened in the clip." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
-      <small>Sent with the screenshot only when you click a solve button. Not saved. Shortcuts use the screenshot alone. No audio is recorded.</small>
+      <textarea id="mediaContext" maxlength="6000" rows="3" placeholder="Paste a transcript, captions or notes about the clip." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
+      <small>Included only with popup solves; cleared when the popup closes. Shortcuts send the screenshot alone. No audio recording.</small>
     </div>
-    <label>Model slots (loaded live from your API keys):</label>
+    <label>Choose a model for each shortcut:</label>
     <div class="slot-row">
       <button id="solveSlot1">Alt+Z</button>
       <select id="slot1" aria-label="Model for Alt+Z"></select>

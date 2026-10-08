@@ -12,7 +12,15 @@ function normalizeOpenAIBaseUrl(value) {
 }
 
 async function apiFetch(url, options = {}) {
-    return fetch(url, { ...options, signal: AbortSignal.timeout(60000) });
+    // Fail before Chrome can terminate an MV3 worker waiting 30s for fetch.
+    try {
+        return await fetch(url, { ...options, signal: AbortSignal.timeout(25000) });
+    } catch (error) {
+        if (error.name === 'TimeoutError') {
+            throw new Error('The API did not respond within 25 seconds. Try again or choose another model.');
+        }
+        throw error;
+    }
 }
 
 async function fetchGeminiModels(apiKey) {

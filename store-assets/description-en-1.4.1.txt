@@ -1,0 +1,33 @@
+Get an AI answer suggestion without leaving your Kahoot quiz.
+
+Connect your own Gemini, OpenAI or OpenAI-compatible API account, choose a model, and press a shortcut. Kahoot AI Solver captures the visible part of your quiz tab, sends the screenshot to your selected provider, and shows a suggestion on the page. You decide what to answer; the extension never clicks or submits for you.
+
+Your models, your shortcuts
+Assign a model to each of three shortcuts: Alt+Z, Alt+X and Alt+C. Use Option on Mac, or click a solve button in the popup. Models load directly from your API, so you can refresh the list when new ones become available. Choose a model that accepts images; appearing in the list does not guarantee compatibility. While a request is running, additional solve triggers are ignored.
+
+Choose how answers appear
+Normal shows a readable panel for 15 seconds. Stealth uses a small corner indicator for single-choice answers and a compact text box for other formats, shown for 8 seconds. Both remain visible in screenshots and screen sharing.
+
+Single-choice suggestions match Kahoot's answer colors and shapes: red triangle, blue diamond, yellow circle and green square. The extension can also display multiple choices, typed text, puzzle order and slider values. Results depend on the visible question and your model, and can be wrong. Missing information and personal survey preferences cannot be reliably answered.
+
+For audio or video questions, paste a transcript, captions or notes into Audio/video context and use a popup solve button. This text is sent with that request, is not saved, and is cleared when the popup closes. Keyboard shortcuts send only the screenshot. The extension does not record audio or upload video.
+
+Getting started
+1. Open the extension and click Settings.
+2. Enter your Gemini or OpenAI API key. For a compatible server, also enter its API URL including /v1.
+3. Click Save Keys & Reload Models. Approve server access if Chrome asks.
+4. Choose a model for each shortcut and an answer display.
+5. Open a practice quiz with the full question and options visible, then run a solve.
+
+Compatible servers need /models and image input through /chat/completions. Use HTTPS: HTTP sends API keys and screenshots without encryption.
+
+Privacy and cost
+API keys and settings stay in your browser's local storage. Anything visible in the tab can be included in a screenshot. Screenshots and optional context go directly to the provider you select, with no developer-operated backend. The extension does not save screenshots or answer history. Your provider's data and retention policies apply.
+
+Bring your own API key. No keys or AI credits are included, and your provider may charge for requests.
+
+Use only where AI assistance is allowed and follow your school or quiz host's rules. Answer accuracy and support for every quiz format are not guaranteed. This is an independent extension, not affiliated with or endorsed by Kahoot!, Google or OpenAI.
+
+Website: https://ketchio-dev.github.io/Kahoot-AI-Solver/
+Setup and source: https://github.com/Ketchio-dev/Kahoot-AI-Solver
+Support: https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues

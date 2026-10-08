@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fbfaf7">
-  <meta name="description" content="Press a shortcut and get an AI answer suggestion for the Kahoot question on your screen, from the model and API account you choose. A Chrome extension.">
+  <meta name="description" content="Get an AI answer suggestion without leaving your Kahoot quiz. Connect your own API account, choose a model, and press a shortcut.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Kahoot AI Solver — Press a key, get a suggested answer">
-  <meta property="og:description" content="A Chrome extension that captures the quiz on your screen, asks the model you chose, and shows a suggestion on the page.">
+  <meta property="og:description" content="Get an AI answer suggestion without leaving your Kahoot quiz. Use your own Gemini, OpenAI or compatible API account.">
   <meta property="og:site_name" content="Kahoot AI Solver by Ketchio">
   <meta name="author" content="Ketchio">
   <meta property="og:url" content="https://ketchio-dev.github.io/Kahoot-AI-Solver/">
@@ -62,12 +62,12 @@
     <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
         <h1 id="hero-title"><span class="l">Press a key.</span> <span class="l">Get a suggested</span> <span class="l hl">answer.</span></h1>
-        <p class="lede">Kahoot AI Solver captures the quiz on your screen, asks the AI model you chose, and shows a suggestion on the page. Bring your own Gemini, OpenAI or OpenAI-compatible API key.</p>
+        <p class="lede">Send a screenshot of your quiz to the AI model you choose and see its suggestion on the page. Connect your own Gemini, OpenAI or compatible API account.</p>
         <div class="cta-row">
           <a class="btn btn-red" id="install" href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-chrome"/></svg>Add to Chrome</a>
           <a class="link" href="#how-it-works">How it works <svg class="ico" aria-hidden="true"><use href="#i-down"/></svg></a>
         </div>
-        <p class="fineprint">No API key or AI credits are included. Your provider bills the usage.</p>
+        <p class="fineprint">Your API key is required. Provider charges may apply; no AI credits are included.</p>
         <p class="release-note"><a href="https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp" target="_blank" rel="noopener noreferrer">v1.4.0 is available on the Chrome Web Store.</a></p>
       </div>
 
@@ -108,10 +108,10 @@
       <div class="wrap how">
         <div class="how-intro">
           <h2 id="how-title">What happens when you press the key</h2>
-          <p class="lede">Four steps. Only one of them sends anything off your computer.</p>
+          <p class="lede">You start each request. The screenshot goes directly to your selected provider.</p>
           <div class="local" id="privacy">
             <h3>Kept on your device</h3>
-            <p>API keys, server URL, model choices and display mode live in <code>chrome.storage.local</code>. They are not synced, and the extension adds no encryption of its own. Screenshots and answers are not saved.</p>
+            <p>API keys and settings stay in your browser’s local storage (<code>chrome.storage.local</code>), without sync or extra encryption. Screenshots and answer history are not saved.</p>
             <p>Use an HTTPS address for a compatible server. Plain HTTP sends your key and screenshots unencrypted.</p>
             <a class="link" href="privacy.html">Read the privacy policy <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></a>
           </div>
@@ -129,12 +129,12 @@
           </li>
           <li class="out">
             <h3>Your provider answers</h3>
-            <p>The screenshot goes straight from your browser to Gemini, OpenAI or your own server, with your API key. No server run by the developer sits in between. The provider bills the usage and applies its own retention rules.</p>
+            <p>The screenshot is sent to your selected API using your key. There is no developer-operated backend. Your provider’s fees and data retention rules apply.</p>
             <span class="where">Leaves your browser</span>
           </li>
           <li>
             <h3>A suggestion appears on the page</h3>
-            <p>A panel for 15 seconds, or a small corner indicator for 8, depending on the display mode. It never clicks or submits anything. You check the suggestion and answer yourself.</p>
+            <p>Normal shows a panel for 15 seconds; Stealth uses a compact display for 8. Review the suggestion and answer yourself. The extension never clicks or submits.</p>
             <span class="where">In your browser</span>
           </li>
         </ol>
@@ -159,8 +159,8 @@
       </figure>
       <div class="models-copy">
         <h2 id="models-title">Three keys, three models.</h2>
-        <p class="lede">Connect Gemini, OpenAI or any OpenAI-compatible server. The extension loads the model list from your API, so no model is hardcoded, and it leaves out models that report no image support.</p>
-        <p class="lede">Refresh the list when a provider ships something new. A listed model can still reject an image request, so try each slot on a practice quiz.</p>
+        <p class="lede">Assign a model to each shortcut from your Gemini, OpenAI or compatible API account. Models load from your provider, and you can refresh the list when new ones become available.</p>
+        <p class="lede">Models that report no image support are left out. Others may still reject an image request, so test your choices on a practice quiz.</p>
         <a class="link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver#setup" target="_blank" rel="noopener noreferrer">How to connect a model <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
       </div>
     </section>
@@ -199,7 +199,7 @@
           </li>
           <li class="fmt">
             <h3>Not enough on screen</h3>
-            <p>When the screenshot lacks what the question needs, the extension says so instead of guessing.</p>
+            <p>The model is asked to report when the screenshot does not contain enough information.</p>
             <div class="fmt-demo"><div class="ovl ovl-static ovl-normal">Cannot determine: Missing information</div></div>
           </li>
         </ol>
@@ -212,7 +212,7 @@
         <h2 id="setup-title">Set it up once.</h2>
         <ol class="setup-steps">
           <li>
-            <div><h3>Install, then open settings</h3><p>Click the extension icon, then the <b>···</b> button at the top right. The first screen is labeled “Youtube Ad Blocker”, but the extension does not block ads.</p></div>
+            <div><h3>Open AI settings</h3><p>Install the extension, click its icon, then click <b>···</b> in the top-right corner. That opens AI settings in the current store release (v1.4.0).</p></div>
           </li>
           <li>
             <div><h3>Connect your API</h3><p>Enter a Gemini key, an OpenAI key, or both, then click <b>Save Keys &amp; Reload Models</b>. For a compatible server, enter its URL including <code>/v1</code> and approve Chrome’s access prompt.</p>
@@ -235,11 +235,12 @@
         <a class="link" href="https://github.com/Ketchio-dev/Kahoot-AI-Solver/issues" target="_blank" rel="noopener noreferrer">Questions or bug reports <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a>
       </div>
       <div class="faq-list">
-        <details><summary>Does it include an API key or AI credits?</summary><p>No. You connect your own Gemini, OpenAI or compatible API account. Your provider bills you for the usage.</p></details>
-        <details><summary>Does it click or submit answers for me?</summary><p>No. It only shows a suggestion on the page. You check it, pick the option and submit it yourself. Use it for learning, practice and research, and only where AI help is allowed.</p></details>
-        <details><summary>How do Normal and Stealth differ?</summary><p>Normal shows a readable panel for 15 seconds. Stealth shows a small corner dot for single-choice answers, or a small text box for richer answers, for 8 seconds. Both can appear in screenshots and screen sharing.</p></details>
+        <details><summary>Do I need my own API key?</summary><p>Yes. Connect a Gemini, OpenAI or compatible API account. No keys or AI credits are included; your provider may charge for requests.</p></details>
+        <details><summary>Why does the popup say “Youtube Ad Blocker”?</summary><p>The current store release (v1.4.0) has an old cover screen. Click <b>···</b> to open AI settings; it does not block ads. The v1.4.1 update uses the Kahoot AI Solver name and a Settings button. It has been submitted for review and is not yet published.</p></details>
+        <details><summary>Does it click or submit answers for me?</summary><p>No. You review the suggestion, choose an answer and submit it yourself. Use assistance only where your school or quiz host allows it.</p></details>
+        <details><summary>How do Normal and Stealth differ?</summary><p>Normal shows a readable answer panel for 15 seconds. Stealth uses an 8-second corner indicator: a colored shape for single-choice answers or a compact text box for other formats. Both can appear in screenshots and screen sharing.</p></details>
         <details><summary>Does it work for audio or video questions?</summary><p>It does not record audio or upload video. Paste a transcript, captions or your own notes into the Audio/video context field in settings, then click a solve button in the popup. The text is sent with the screenshot, is not saved, and is cleared when the popup closes. Keyboard shortcuts send only the screenshot.</p></details>
-        <details><summary>Can I use every model in the list?</summary><p>Not necessarily. Image-input support and API compatibility depend on the provider, so a listed model may still reject a request. A compatible server must support <code>/models</code> and a <code>/chat/completions</code> endpoint that accepts image input. If the screen does not show what the question needs, or the model misreads it, you will not get a reliable answer.</p></details>
+        <details><summary>Can I use every model in the list?</summary><p>Not always. A listed model may still reject an image request. Try your choice on a practice quiz. For compatible-server requirements, see the <a href="https://github.com/Ketchio-dev/Kahoot-AI-Solver#setup" target="_blank" rel="noopener noreferrer">setup guide</a>.</p></details>
       </div>
     </section>
 

@@ -35,6 +35,10 @@ function showProcessing() {
     const indicator = createIndicator();
     indicator.classList.add('kahoot-stealth-indicator--pending');
     indicator.textContent = displayMode === 'stealth' ? '' : 'Analyzing question…';
+    // The worker can be interrupted without delivering a result or error.
+    indicatorTimer = setTimeout(() => {
+        showError('The request timed out or was interrupted. Try again.');
+    }, 30000);
 }
 
 function showAnswer(answer) {

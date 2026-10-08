@@ -43,11 +43,13 @@ test('install buttons point to the Chrome Web Store listing', () => {
   assert.deepEqual([...links], ['https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp']);
 });
 
-test('the release link names the current repository version without a pending-review claim', () => {
+test('the release link names the verified published version, not an unpublished repository update', () => {
   const html = read('docs', 'index.html');
   const note = html.match(/<p class="release-note">([\s\S]*?)<\/p>/)?.[1];
   assert.ok(note, 'release note is missing');
-  assert.ok(note.includes('v' + manifest.version + ' is available on the Chrome Web Store.'), 'release version differs from manifest');
+  // v1.4.0 was verified in the public listing and published console package.
+  // A local manifest bump is not evidence that a new version is available.
+  assert.ok(note.includes('v1.4.0 is available on the Chrome Web Store.'), 'verified published version changed');
   assert.match(note, /href="https:\/\/chromewebstore\.google\.com\/detail\/fgpbceoplppnfodmjcengikbefngpjfp"/);
   assert.doesNotMatch(note, /pending|awaiting|under review/i);
 });

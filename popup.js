@@ -133,12 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const toggleBtn = document.getElementById('toggleViewBtn');
-  const fakeView = document.getElementById('fake-view');
-  const realView = document.getElementById('real-view');
+  const homeView = document.getElementById('home-view');
+  const settingsView = document.getElementById('settings-view');
 
   toggleBtn.addEventListener('click', () => {
-    const showReal = realView.style.display === 'none';
-    realView.style.display = showReal ? 'block' : 'none';
-    fakeView.style.display = showReal ? 'none' : 'block';
+    const showSettings = settingsView.style.display === 'none';
+    settingsView.style.display = showSettings ? 'block' : 'none';
+    homeView.style.display = showSettings ? 'none' : 'block';
+    toggleBtn.textContent = showSettings ? 'Back' : 'Settings';
+    toggleBtn.setAttribute('aria-label', showSettings ? 'Back to home' : 'Open AI settings');
+    toggleBtn.setAttribute('aria-expanded', String(showSettings));
   });
 });

@@ -85,24 +85,22 @@ const solveQuestion = async (slot, mediaContext = '') => {
         console.error("Error processing:", error);
         if (tab) await notifyTab(tab.id, { action: "error", message: error.message });
         chrome.action.setIcon({ imageData: drawIcon('#FF0000') });
-        setTimeout(() => chrome.action.setIcon({ imageData: drawIcon('#000000') }), 1000);
+        setTimeout(restoreIcon, 1000);
     } finally {
         solveInFlight = false;
     }
 };
 
-function drawIcon(textColor) {
+function restoreIcon() {
+    chrome.action.setIcon({ path: { 16: 'icon16.png', 48: 'icon48.png', 128: 'icon128.png' } });
+}
+
+function drawIcon(color) {
     const canvas = new OffscreenCanvas(128, 128);
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#555555';
+    ctx.fillStyle = color;
     ctx.fillRect(0, 0, 128, 128);
-
-    ctx.fillStyle = textColor;
-    ctx.font = 'bold 80px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Y', 64, 64);
 
     return ctx.getImageData(0, 0, 128, 128);
 }
@@ -122,9 +120,7 @@ function updateIcon(color) {
     }
 
     chrome.action.setIcon({ imageData: drawIcon(hex) });
-    setTimeout(() => {
-        chrome.action.setIcon({ imageData: drawIcon('#000000') });
-    }, 1000);
+    setTimeout(restoreIcon, 1000);
 }
 
 chrome.commands.onCommand.addListener(async (command) => {
@@ -133,9 +129,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     else if (command === "solve-slot-3") await solveQuestion(SLOTS[2]);
 });
 
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.action.setIcon({ imageData: drawIcon('#000000') });
-});
+chrome.runtime.onInstalled.addListener(restoreIcon);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "manual_solve") {
