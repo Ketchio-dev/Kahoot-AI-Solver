@@ -1,4 +1,4 @@
-// Live model discovery. No model IDs are hardcoded anywhere in this extension.
+// Live model discovery. Model selection is stored per shortcut slot.
 
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';
@@ -11,13 +11,32 @@ function normalizeOpenAIBaseUrl(value) {
     return url.href.replace(/\/$/, '');
 }
 
-async function apiFetch(url, options = {}) {
-    // Fail before Chrome can terminate an MV3 worker waiting 30s for fetch.
+async function apiFetch(url, options = {}, operation = 'API request') {
+    // Keep both the request and response body within the worker's time budget.
+    const signal = AbortSignal.timeout(25000);
     try {
-        return await fetch(url, { ...options, signal: AbortSignal.timeout(25000) });
+        const response = await fetch(url, { ...options, redirect: 'error', signal });
+        if (!response.ok) {
+            const hints = {
+                400: 'Check the API URL and use a model that accepts images.',
+                401: 'Check your API key.',
+                403: 'Check key permissions and model access.',
+                404: 'Check the API URL and model availability.',
+                429: 'Check your API quota, rate limit or billing.'
+            };
+            const hint = hints[response.status] || 'Try again or check the provider status.';
+            throw new Error(`${operation} failed (HTTP ${response.status}). ${hint}`);
+        }
+        return await response.json();
     } catch (error) {
-        if (error.name === 'TimeoutError') {
-            throw new Error('The API did not respond within 25 seconds. Try again or choose another model.');
+        if (signal.aborted || error.name === 'TimeoutError') {
+            throw new Error(`${operation} did not respond within 25 seconds. Try again or choose another model.`);
+        }
+        if (error.name === 'SyntaxError') {
+            throw new Error(`${operation} returned an invalid response. Check the API URL.`);
+        }
+        if (error.name === 'TypeError') {
+            throw new Error(`${operation} could not connect. Check the API URL, network and extension site access.`);
         }
         throw error;
     }
@@ -28,19 +47,16 @@ async function fetchGeminiModels(apiKey) {
     let pageToken = '';
 
     do {
-        const url = `${GEMINI_MODELS_URL}?pageSize=200&key=${encodeURIComponent(apiKey)}${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
-        const response = await apiFetch(url);
-        if (!response.ok) {
-            throw new Error(`Gemini model list failed: ${response.status} - ${await response.text()}`);
-        }
-        const data = await response.json();
+        const url = `${GEMINI_MODELS_URL}?pageSize=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+        const data = await apiFetch(url, { headers: { 'x-goog-api-key': apiKey } }, 'Gemini model list');
         for (const model of data.models || []) {
             const methods = model.supportedGenerationMethods || [];
-            if (!methods.includes('generateContent')) continue;
+            if (typeof model.name !== 'string' || !methods.includes('generateContent')) continue;
             models.push({
                 provider: 'gemini',
                 id: model.name.replace(/^models\//, ''),
-                label: model.displayName || model.name.replace(/^models\//, '')
+                label: model.displayName || model.name.replace(/^models\//, ''),
+                verifiedVision: false
             });
         }
         pageToken = data.nextPageToken || '';
@@ -54,7 +70,7 @@ async function fetchGeminiModels(apiKey) {
 const OPENAI_NON_CHAT_PATTERNS = [
     /whisper/, /^tts-/, /^dall-e/, /embedding/, /moderation/, /^omni-moderation/,
     /^text-(davinci|curie|babbage|ada)/, /^davinci/, /^babbage/, /^codex-mini/,
-    /audio/, /realtime/, /transcribe/, /^sora/, /image/, /^gpt-3\.5/
+    /audio/, /realtime/, /transcribe/, /^sora/, /^gpt-image/, /^gpt-3\.5/
 ];
 
 function isLikelyVisionChatModel(id) {
@@ -62,44 +78,33 @@ function isLikelyVisionChatModel(id) {
 }
 
 async function fetchOpenAIModels(apiKey, baseUrl) {
-    const response = await apiFetch(`${normalizeOpenAIBaseUrl(baseUrl)}/models`, {
+    const url = normalizeOpenAIBaseUrl(baseUrl);
+    const official = url === DEFAULT_OPENAI_BASE_URL;
+    const data = await apiFetch(`${url}/models`, {
         headers: { 'Authorization': `Bearer ${apiKey}` }
-    });
-    if (!response.ok) {
-        throw new Error(`OpenAI model list failed: ${response.status} - ${await response.text()}`);
+    }, 'OpenAI model list');
+    const models = [];
+    for (const model of data.data || []) {
+        if (typeof model.id !== 'string' || !model.id || model.capabilities?.vision === false) continue;
+        const verifiedVision = model.capabilities?.vision === true;
+        if (!verifiedVision && official && !isLikelyVisionChatModel(model.id)) continue;
+        models.push({ provider: 'openai', id: model.id, label: model.id, verifiedVision });
     }
-    const data = await response.json();
-    return (data.data || [])
-        .filter((model) => model.capabilities?.vision === true ||
-            (model.capabilities?.vision !== false && isLikelyVisionChatModel(model.id)))
-        .map((model) => ({
-            provider: 'openai',
-            id: model.id,
-            label: model.id
-        }));
+    return models;
 }
 
 // Returns every model reachable with the keys currently stored, sorted by id.
 async function fetchAvailableModels({ geminiApiKey, openaiApiKey, openaiBaseUrl }) {
+    const discovery = [];
+    if (geminiApiKey) discovery.push(fetchGeminiModels(geminiApiKey));
+    if (openaiApiKey) discovery.push(fetchOpenAIModels(openaiApiKey, openaiBaseUrl));
+
     const models = [];
     const errors = [];
-
-    if (geminiApiKey) {
-        try {
-            models.push(...await fetchGeminiModels(geminiApiKey));
-        } catch (e) {
-            errors.push(e.message);
-        }
+    for (const result of await Promise.allSettled(discovery)) {
+        if (result.status === 'fulfilled') models.push(...result.value);
+        else errors.push(result.reason.message);
     }
-
-    if (openaiApiKey) {
-        try {
-            models.push(...await fetchOpenAIModels(openaiApiKey, openaiBaseUrl));
-        } catch (e) {
-            errors.push(e.message);
-        }
-    }
-
     models.sort((a, b) => a.provider.localeCompare(b.provider) || a.id.localeCompare(b.id));
     return { models, errors };
 }

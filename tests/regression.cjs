@@ -2,16 +2,17 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { randomUUID } = require('node:crypto');
 
 function context(overrides = {}) {
   const chrome = {
     storage: { local: { get: async () => ({}), set: async () => {} } },
-    tabs: { query: async () => [{ id: 1, windowId: 7 }], sendMessage: async () => {}, captureVisibleTab: async () => 'data:image/png;base64,image' },
+    tabs: { query: async () => [{ id: 1, windowId: 7 }], sendMessage: async () => true, captureVisibleTab: async () => 'data:image/png;base64,image' },
     action: { setIcon: () => {} },
     commands: { onCommand: { addListener: () => {} } },
     runtime: { onInstalled: { addListener(fn) { this.listener = fn; } }, onMessage: { addListener: () => {} } }
   };
-  const ctx = vm.createContext({ chrome, console, URL, AbortSignal, setTimeout: () => {}, clearTimeout: () => {}, importScripts: () => {}, ...overrides });
+  const ctx = vm.createContext({ chrome, console, URL, AbortSignal, crypto: { randomUUID }, setTimeout: () => {}, clearTimeout: () => {}, importScripts: () => {}, ...overrides });
   vm.runInContext(fs.readFileSync('models.js', 'utf8'), ctx);
   vm.runInContext(fs.readFileSync('background.js', 'utf8'), ctx);
   if (!overrides.OffscreenCanvas) vm.runInContext('drawIcon = () => ({})', ctx);
@@ -22,19 +23,20 @@ test('popup persists settings before a permission prompt can destroy it', async 
   let loaded;
   const elements = new Map();
   const element = id => {
-    if (!elements.has(id)) elements.set(id, { value: '', style: {}, addEventListener(event, fn) { this[event] = fn; } });
+    if (!elements.has(id)) elements.set(id, { value: '', style: {}, getAttribute() { return null; }, setAttribute() {}, replaceChildren() {}, add() {}, addEventListener(event, fn) { this[event] = fn; } });
     return elements.get(id);
   };
   let saved;
   const order = [];
   const ctx = vm.createContext({
-    URL, console, setTimeout: () => {},
+    URL, console, Option: class {},
     DEFAULT_OPENAI_BASE_URL: 'https://api.openai.com/v1',
-    normalizeOpenAIBaseUrl: value => value,
+    normalizeOpenAIBaseUrl: value => value || 'https://api.openai.com/v1',
     document: { getElementById: element, addEventListener: (_, fn) => { loaded = fn; } },
     chrome: {
-      storage: { local: { get: () => {}, set: async data => { saved = data; order.push('save'); } } },
+      storage: { local: { get: (_, callback) => callback({ openaiApiKey: 'old', slot1: { provider: 'openai', id: 'old' } }), set: async data => { saved = data; order.push('save'); } } },
       runtime: { sendMessage: () => {} },
+      commands: { getAll: async () => [] },
       permissions: { request: () => { order.push('prompt'); return new Promise(() => {}); } }
     }
   });
@@ -46,12 +48,13 @@ test('popup persists settings before a permission prompt can destroy it', async 
   assert.deepEqual(order, ['save', 'prompt']);
   assert.equal(saved.openaiBaseUrl, 'http://127.0.0.1:8080/v1');
   assert.equal(saved.openaiApiKey, 'test-key');
+  assert.equal(saved.slot1, null);
 });
 
 test('popup uses truthful product branding and toggles accessible settings in both directions', () => {
   const html = fs.readFileSync('popup.html', 'utf8');
-  assert.match(html, /<title>Kahoot AI Solver — Settings<\/title>/);
-  assert.match(html, /<h2>Kahoot AI Solver<\/h2>/);
+  assert.match(html, /<title>Kahoot AI Solver<\/title>/);
+  assert.match(html, /<h1>Kahoot AI Solver<\/h1>/);
   assert.match(html, /src="icon128\.png"/);
   assert.doesNotMatch(html, /Youtube|Ad Blocker|PROTECTION ACTIVE|Ads Blocked|BLOCKING LEVEL|fake-view|real-view/i);
   assert.match(html, /aria-controls="settings-view"/);
@@ -68,7 +71,7 @@ test('popup uses truthful product branding and toggles accessible settings in bo
   element('settings-view').style.display = 'none';
   const ctx = vm.createContext({
     document: { getElementById: element, addEventListener: (_, fn) => { loaded = fn; } },
-    chrome: { storage: { local: { get: () => {} } } }
+    chrome: { storage: { local: { get: () => {} } }, commands: { getAll: async () => [] } }
   });
   vm.runInContext(fs.readFileSync('popup.js', 'utf8'), ctx);
   loaded();
@@ -76,13 +79,13 @@ test('popup uses truthful product branding and toggles accessible settings in bo
   toggle.click();
   assert.equal(element('settings-view').style.display, 'block');
   assert.equal(element('home-view').style.display, 'none');
-  assert.equal(toggle.textContent, 'Back');
+  assert.equal(element('toggleViewLabel').textContent, 'Back');
   assert.equal(toggle.attributes['aria-label'], 'Back to home');
   assert.equal(toggle.attributes['aria-expanded'], 'true');
   toggle.click();
   assert.equal(element('settings-view').style.display, 'none');
   assert.equal(element('home-view').style.display, 'block');
-  assert.equal(toggle.textContent, 'Settings');
+  assert.equal(element('toggleViewLabel').textContent, 'Settings');
   assert.equal(toggle.attributes['aria-label'], 'Open AI settings');
   assert.equal(toggle.attributes['aria-expanded'], 'false');
 });
@@ -112,8 +115,8 @@ test('media context is attached only to the current prompt and validates length'
 
 test('unset slots require user selection without fetching or assigning a model', async () => {
   const ctx = context({ fetch: () => { throw new Error('Unexpected model request'); } });
-  await assert.rejects(vm.runInContext('resolveSlotModel("slot1")', ctx), /Select a model/);
-  await assert.rejects(vm.runInContext('resolveSlotModel("unknown")', ctx), /Invalid model slot/);
+  assert.throws(() => vm.runInContext('resolveSlotModel("slot1", {})', ctx), /Select a model/);
+  assert.throws(() => vm.runInContext('resolveSlotModel("unknown", {})', ctx), /Invalid model slot/);
 });
 
 test('answer parsing rejects prose instead of choosing the first color mentioned', () => {
@@ -179,7 +182,7 @@ test('concurrent shortcuts only issue one solve and capture the originating wind
     captures++;
     return 'data:image/png;base64,image';
   };
-  vm.runInContext('resolveSlotModel = async () => ({provider:"openai",id:"vision"}); getKeys = async () => ({openaiApiKey:"test"}); analyzeImageOpenAI = async () => "blue";', ctx);
+  vm.runInContext('resolveSlotModel = () => ({provider:"openai",id:"vision"}); getProviderSettings = async () => ({openaiApiKey:"test"}); analyzeImageOpenAI = async () => "blue";', ctx);
   const first = vm.runInContext('solveQuestion("slot1")', ctx);
   const second = vm.runInContext('solveQuestion("slot1")', ctx);
   release([{ id: 1, windowId: 7 }]);
@@ -207,7 +210,7 @@ test('install and success/error feedback resets restore the packaged product ico
     }
   });
   ctx.chrome.action.setIcon = icon => icons.push(JSON.parse(JSON.stringify(icon)));
-  ctx.chrome.tabs.sendMessage = async (_, message) => { messages.push(message); };
+  ctx.chrome.tabs.sendMessage = async (_, message) => { messages.push(message); return true; };
   const packagedIcon = { path: { 16: 'icon16.png', 48: 'icon48.png', 128: 'icon128.png' } };
 
   ctx.chrome.runtime.onInstalled.listener();
@@ -215,7 +218,7 @@ test('install and success/error feedback resets restore the packaged product ico
   assert.equal(timers.length, 0);
   assert.equal(fills.length, 0);
 
-  vm.runInContext('resolveSlotModel = async () => ({provider:"openai",id:"vision"}); getKeys = async () => ({openaiApiKey:"test"}); analyzeImageOpenAI = async () => "blue";', ctx);
+  vm.runInContext('resolveSlotModel = () => ({provider:"openai",id:"vision"}); getProviderSettings = async () => ({openaiApiKey:"test"}); analyzeImageOpenAI = async () => "blue";', ctx);
   await vm.runInContext('solveQuestion("slot1")', ctx);
   assert.deepEqual(icons[1], { imageData: { color: '#45A3E5' } });
   assert.equal(messages.at(-1).action, 'highlight_answer');
@@ -261,7 +264,7 @@ test('pending feedback expires after worker interruption and is cancelled on a r
     console: { warn: () => {} },
     document: {
       getElementById: () => current,
-      createElement: () => ({ style: {}, classList: { add: () => {} }, remove() { current = undefined; } }),
+      createElement: () => ({ style: {}, classList: { add: () => {} }, setAttribute() {}, remove() { current = undefined; } }),
       body: { appendChild: node => { current = node; } }
     },
     setTimeout: (callback, delay) => { const id = ++nextTimer; timers.set(id, { callback, delay }); return id; },
@@ -273,7 +276,7 @@ test('pending feedback expires after worker interruption and is cancelled on a r
   assert.equal(timers.get(1).delay, 30000);
   timers.get(1).callback();
   assert.match(current.textContent, /Error: The request timed out or was interrupted/);
-  assert.equal(timers.get(2).delay, 4000);
+  assert.equal(timers.get(2).delay, 8000);
   timers.get(2).callback();
   assert.equal(current, undefined);
 
@@ -295,7 +298,7 @@ test('old result timers are cancelled when a new indicator is displayed', () => 
     console,
     document: {
       getElementById: () => current,
-      createElement: () => ({ style: {}, classList: { add: () => {} }, remove() { current = undefined; } }),
+      createElement: () => ({ style: {}, classList: { add: () => {} }, setAttribute() {}, remove() { current = undefined; } }),
       body: { appendChild: node => { current = node; } }
     },
     setTimeout: () => 123,
@@ -312,4 +315,105 @@ test('old result timers are cancelled when a new indicator is displayed', () => 
   listener({ action: 'highlight_answer', mode: 'stealth', answer: { type: 'text', text: '<script>unsafe</script>' } });
   assert.equal(current.className, 'kahoot-stealth-indicator');
   assert.equal(current.textContent, '<script>unsafe</script>');
+});
+
+test('switching tabs during capture prevents sending the screenshot to the provider', async () => {
+  const ctx = context({ console: { warn() {} } });
+  let captured = false;
+  const messages = [];
+  ctx.chrome.tabs.query = async () => [{ id: captured ? 2 : 1, windowId: 7 }];
+  ctx.chrome.tabs.captureVisibleTab = async () => {
+    captured = true;
+    return 'data:image/png;base64,image';
+  };
+  ctx.chrome.tabs.sendMessage = async (_, message) => {
+    messages.push(message);
+    return true;
+  };
+  vm.runInContext('resolveSlotModel = () => ({provider:"openai",id:"vision"}); getProviderSettings = async () => ({openaiApiKey:"test"});', ctx);
+  ctx.fetch = () => assert.fail('Changed-tab screenshot must not be uploaded');
+  const replies = [];
+  ctx.acknowledge = reply => replies.push(reply);
+  await vm.runInContext('solveQuestion("slot1", "", {id:1, windowId:7}, acknowledge)', ctx);
+  assert.equal(captured, true);
+  assert.match(replies[0].error, /active tab changed/);
+  assert.deepEqual(messages.map(({ action }) => action), ['prepare_capture', 'error']);
+});
+
+test('a new document ignores feedback for a capture it did not prepare', () => {
+  let listener;
+  const ctx = vm.createContext({
+    chrome: { runtime: { onMessage: { addListener: fn => { listener = fn; } } } },
+    document: { getElementById: () => null, createElement: () => assert.fail('Stale feedback') },
+    clearTimeout() {}
+  });
+  vm.runInContext(fs.readFileSync('content.js', 'utf8'), ctx);
+  listener({ action: 'prepare_capture', requestId: 'current' }, null, () => {});
+  listener({ action: 'highlight_answer', requestId: 'old', answer: 'blue' });
+});
+
+test('Gemini extracts the answer separately from thought parts and rejects truncated results', async () => {
+  const candidate = {
+    finishReason: 'STOP',
+    content: { parts: [{ text: 'reasoning', thought: true }, { text: '{"answer":"blue"}' }] }
+  };
+  const ctx = context({
+    fetch: async () => ({ ok: true, json: async () => ({ candidates: [candidate] }) })
+  });
+  assert.equal(await vm.runInContext('analyzeImage("test", "image", "vision")', ctx), 'blue');
+  candidate.finishReason = 'MAX_TOKENS';
+  await assert.rejects(vm.runInContext('analyzeImage("test", "image", "vision")', ctx), /truncated/);
+});
+
+test('provider errors report the HTTP status without echoing response bodies', async () => {
+  const ctx = context({
+    fetch: async () => ({ ok: false, status: 401, text: () => assert.fail('Sensitive body must stay private') })
+  });
+  await assert.rejects(
+    vm.runInContext('fetchOpenAIModels("secret", "https://example.test/v1")', ctx),
+    /HTTP 401.*Check your API key/
+  );
+});
+
+test('official OpenAI uses the Responses API and extracts answer text after reasoning', async () => {
+  let responseStatus = 'completed';
+  let request;
+  const ctx = context({
+    fetch: async (url, options) => {
+      request = { url, body: JSON.parse(options.body), redirect: options.redirect };
+      return { ok: true, json: async () => ({
+        status: responseStatus,
+        output: [{ type: 'reasoning' }, { type: 'message', content: [
+          { type: 'output_text', text: '{"answer":"red"}' }
+        ] }]
+      }) };
+    }
+  });
+  const call = 'analyzeImageOpenAI("test", "image", "user-selected-model")';
+  assert.equal(await vm.runInContext(call, ctx), 'red');
+  assert.equal(request.url, 'https://api.openai.com/v1/responses');
+  assert.equal(request.body.model, 'user-selected-model');
+  assert.equal(request.body.store, false);
+  assert.equal(request.body.input[0].content[1].image_url, 'data:image/png;base64,image');
+  assert.equal(request.redirect, 'error');
+  responseStatus = 'incomplete';
+  await assert.rejects(vm.runInContext(call, ctx), /incomplete answer/);
+});
+
+test('Gemini model discovery keeps the API key in a header and reads multiple pages', async () => {
+  const calls = [];
+  const ctx = context({
+    fetch: async (url, options) => {
+      calls.push({ url, key: options.headers['x-goog-api-key'] });
+      const page = calls.length;
+      return { ok: true, json: async () => ({
+        models: [{ name: 'models/candidate-' + page, supportedGenerationMethods: ['generateContent'] }],
+        nextPageToken: page === 1 ? 'next' : ''
+      }) };
+    }
+  });
+  const models = await vm.runInContext('fetchGeminiModels("private-key")', ctx);
+  assert.equal(JSON.stringify(models.map(model => model.id)), '["candidate-1","candidate-2"]');
+  assert.ok(calls.every(({ url, key }) => !url.includes('private-key') && key === 'private-key'));
+  assert.match(calls[1].url, /pageToken=next/);
 });

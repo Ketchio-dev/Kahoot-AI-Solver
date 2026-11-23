@@ -1,5 +1,4 @@
-// All on-page feedback is deliberately small and corner-anchored so it stays
-// unobtrusive on a shared screen.
+// Render status and answer suggestions in the bottom-right corner.
 
 const ANSWER_STYLES = {
     red: { color: '#C0392B', icon: '▲' },
@@ -15,6 +14,7 @@ const ANSWER_STYLES = {
 const INDICATOR_ID = 'kahoot-stealth-indicator';
 let indicatorTimer;
 let displayMode = 'normal';
+let activeRequest;
 
 function removeIndicator() {
     clearTimeout(indicatorTimer);
@@ -26,6 +26,7 @@ function createIndicator() {
     removeIndicator();
     const indicator = document.createElement('div');
     indicator.id = INDICATOR_ID;
+    indicator.setAttribute('role', 'status');
     indicator.className = displayMode === 'stealth' ? 'kahoot-stealth-indicator' : 'kahoot-normal-panel';
     document.body.appendChild(indicator);
     return indicator;
@@ -47,8 +48,14 @@ function showAnswer(answer) {
     if (typeof answer === 'string') {
         const style = ANSWER_STYLES[answer.trim().toLowerCase()];
         if (!style) return showError('Invalid answer.');
-        indicator.style.backgroundColor = style.color;
-        text = displayMode === 'stealth' ? style.icon : `${style.icon} ${answer.toUpperCase()}`;
+        if (displayMode === 'stealth') {
+            indicator.style.backgroundColor = style.color;
+            if (style.icon === '●') indicator.style.color = '#24160d';
+            text = style.icon;
+        } else {
+            indicator.style.borderInlineStartColor = style.color;
+            text = `${style.icon} ${answer.toUpperCase()}`;
+        }
     } else if (answer.type === 'multiple') {
         text = answer.colors.map(color => ANSWER_STYLES[color]?.icon || '?').join(' ');
         if (displayMode !== 'stealth') text = `Select all: ${text}\n${answer.colors.join(', ')}`;
@@ -69,24 +76,35 @@ function showAnswer(answer) {
 function showError(message) {
     console.warn('Kahoot AI error:', message);
     const indicator = createIndicator();
-    indicator.style.backgroundColor = '#000000';
-    indicator.textContent = displayMode === 'stealth' ? '!' : `Error: ${message}`;
+    indicator.className = 'kahoot-normal-panel';
+    indicator.style.borderInlineStartColor = '#ff8794';
+    indicator.textContent = `Error: ${message}`;
     indicator.title = message;
 
-    indicatorTimer = setTimeout(removeIndicator, 4000);
+    indicatorTimer = setTimeout(removeIndicator, 8000);
 }
 
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+    if (request.action === 'prepare_capture') {
+        activeRequest = request.requestId;
+        removeIndicator();
+        sendResponse(true);
+        return;
+    }
+    if (request.requestId !== activeRequest) return;
+
     // Messages from older workers/tests without a mode retain compact feedback.
     displayMode = request.mode === 'normal' ? 'normal' : 'stealth';
     if (request.action === 'show_processing') {
         showProcessing();
+        sendResponse?.(true);
     } else if (request.action === 'highlight_answer') {
         if (request.answer) {
             showAnswer(request.answer);
         } else {
             showError('The AI could not identify the answer.');
         }
+        sendResponse?.(true);
     } else if (request.action === 'error') {
         showError(request.message);
     }

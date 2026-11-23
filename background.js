@@ -2,90 +2,97 @@ importScripts('models.js');
 
 const SLOTS = ['slot1', 'slot2', 'slot3'];
 
-async function getKeys() {
-    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl']);
+async function getProviderSettings(slot) {
+    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl', ...(slot ? [slot] : [])]);
 }
 
-// The content script is absent on restricted pages; a failed notify must not
-// mask the underlying result or error.
-async function notifyTab(tabId, message) {
-    try {
-        await chrome.tabs.sendMessage(tabId, { ...message, mode: displayMode });
-    } catch (e) {
-        console.log('Could not reach content script:', e.message);
-    }
+function messageTab(tabId, message) {
+    return chrome.tabs.sendMessage(tabId, message, { frameId: 0 });
 }
 
 // Only use an explicit user selection; never silently choose a paid model.
-async function resolveSlotModel(slot) {
+function resolveSlotModel(slot, settings) {
     if (!SLOTS.includes(slot)) throw new Error('Invalid model slot.');
-    const stored = (await chrome.storage.local.get(slot))[slot];
+    const stored = settings[slot];
     if (stored?.id && ['openai', 'gemini'].includes(stored.provider)) return stored;
     throw new Error('Select a model for this slot in settings first.');
 }
 
-// On pages loaded before the extension, the content script has to be injected
-// on demand before it can receive any message.
-async function startProcessingIndicator(tabId) {
+// On pages opened before the extension was installed, inject feedback on demand.
+async function prepareCapture(tabId, requestId) {
+    const message = { action: 'prepare_capture', requestId };
     try {
-        await chrome.tabs.sendMessage(tabId, { action: "show_processing", mode: displayMode });
-    } catch (e) {
-        console.log("Content script not ready, injecting...", e.message);
-        await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
-        await chrome.scripting.insertCSS({ target: { tabId }, files: ['styles.css'] });
-        await notifyTab(tabId, { action: "show_processing" });
+        return await messageTab(tabId, message);
+    } catch {
+        try {
+            await chrome.scripting.insertCSS({ target: { tabId }, files: ['styles.css'] });
+            await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+            return await messageTab(tabId, message);
+        } catch {
+            throw new Error('Open or reload a quiz page, then try again. Chrome blocks feedback on internal and restricted pages.');
+        }
     }
 }
 
-// Guards against a held-down shortcut firing several paid API calls at once.
-let solveInFlight = false;
-let displayMode = 'normal';
+async function assertActiveTab(tab) {
+    const [activeTab] = await chrome.tabs.query({ active: true, windowId: tab.windowId });
+    if (activeTab?.id !== tab.id) throw new Error('The active tab changed. Try again on the quiz tab.');
+}
 
-const solveQuestion = async (slot, mediaContext = '') => {
+let solveInFlight = false;
+
+const solveQuestion = async (slot, mediaContext = '', tab, acknowledge = () => {}) => {
     if (solveInFlight) {
-        console.log('A solve is already running, ignoring this trigger.');
+        acknowledge({ error: 'An answer is already being generated.' });
         return;
     }
 
     if (typeof mediaContext !== 'string' || mediaContext.length > 6000) {
-        console.warn('Media context must be text of at most 6000 characters.');
+        acknowledge({ error: 'Media context must be text of at most 6000 characters.' });
         return;
     }
+
     solveInFlight = true;
-    let tab;
+    const requestId = crypto.randomUUID();
+    let prepared = false;
+    let started = false;
+    let mode = 'normal';
     try {
-        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab) return;
-        displayMode = (await chrome.storage.local.get('displayMode')).displayMode === 'stealth' ? 'stealth' : 'normal';
-        await startProcessingIndicator(tab.id);
+        if (!tab) [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id == null) throw new Error('Open a quiz page before solving.');
+        await assertActiveTab(tab);
+        mode = (await chrome.storage.local.get('displayMode')).displayMode === 'stealth' ? 'stealth' : 'normal';
+        prepared = (await prepareCapture(tab.id, requestId)) === true;
+        if (!prepared) throw new Error('Reload the quiz tab to connect the extension.');
 
-        const model = await resolveSlotModel(slot);
-        const keys = await getKeys();
+        const keys = await getProviderSettings(slot);
+        const model = resolveSlotModel(slot, keys);
         const apiKey = model.provider === 'openai' ? keys.openaiApiKey : keys.geminiApiKey;
+        if (!apiKey) throw new Error(`Set the ${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key first.`);
 
-        if (!apiKey) {
-            await notifyTab(tab.id, { action: "error", message: `Set the ${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key first.` });
-            return;
-        }
-
-        const [activeTab] = await chrome.tabs.query({ active: true, windowId: tab.windowId });
-        if (activeTab?.id !== tab.id) throw new Error('The active tab changed. Please try again.');
+        await assertActiveTab(tab);
         const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-        const base64Image = dataUrl.split(',')[1];
+        await assertActiveTab(tab);
+        if (!await messageTab(tab.id, { action: 'show_processing', requestId, mode })) {
+            throw new Error('The quiz page changed. Try again on the current question.');
+        }
+        started = true;
+        acknowledge({ ok: true });
 
-        console.log(`Querying ${model.provider}/${model.id}...`);
-        const finalAnswer = model.provider === 'openai'
+        const base64Image = dataUrl.split(',')[1];
+        const answer = model.provider === 'openai'
             ? await analyzeImageOpenAI(apiKey, base64Image, model.id, keys.openaiBaseUrl, mediaContext)
             : await analyzeImage(apiKey, base64Image, model.id, mediaContext);
 
-        console.log(`Final Decision: ${finalAnswer} via ${model.provider}/${model.id}`);
-        await notifyTab(tab.id, { action: "highlight_answer", answer: finalAnswer });
-        updateIcon(typeof finalAnswer === 'string' ? finalAnswer : finalAnswer.colors?.[0] || '');
+        const displayed = await messageTab(tab.id, { action: 'highlight_answer', requestId, mode, answer });
+        if (displayed) updateIcon(typeof answer === 'string' ? answer : answer.colors?.[0] || '');
     } catch (error) {
-        console.error("Error processing:", error);
-        if (tab) await notifyTab(tab.id, { action: "error", message: error.message });
-        chrome.action.setIcon({ imageData: drawIcon('#FF0000') });
-        setTimeout(restoreIcon, 1000);
+        console.warn('Kahoot AI:', error.message);
+        if (!started) acknowledge({ error: error.message });
+        if (prepared) {
+            await messageTab(tab.id, { action: 'error', requestId, mode, message: error.message }).catch(() => {});
+        }
+        flashIcon('#FF0000');
     } finally {
         solveInFlight = false;
     }
@@ -105,6 +112,14 @@ function drawIcon(color) {
     return ctx.getImageData(0, 0, 128, 128);
 }
 
+let iconTimer;
+
+function flashIcon(color) {
+    clearTimeout(iconTimer);
+    chrome.action.setIcon({ imageData: drawIcon(color) });
+    iconTimer = setTimeout(restoreIcon, 1000);
+}
+
 function updateIcon(color) {
     const c = color.toLowerCase().trim();
     let hex = '#FFFFFF';
@@ -119,23 +134,23 @@ function updateIcon(color) {
         hex = '#66BF39';
     }
 
-    chrome.action.setIcon({ imageData: drawIcon(hex) });
-    setTimeout(restoreIcon, 1000);
+    flashIcon(hex);
 }
 
-chrome.commands.onCommand.addListener(async (command) => {
-    if (command === "solve-slot-1") await solveQuestion(SLOTS[0]);
-    else if (command === "solve-slot-2") await solveQuestion(SLOTS[1]);
-    else if (command === "solve-slot-3") await solveQuestion(SLOTS[2]);
+chrome.commands.onCommand.addListener((command, tab) => {
+    if (command === "solve-slot-1") void solveQuestion(SLOTS[0], '', tab);
+    else if (command === "solve-slot-2") void solveQuestion(SLOTS[1], '', tab);
+    else if (command === "solve-slot-3") void solveQuestion(SLOTS[2], '', tab);
 });
 
 chrome.runtime.onInstalled.addListener(restoreIcon);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "manual_solve") {
-        solveQuestion(request.slot || SLOTS[0], request.mediaContext || '');
+        void solveQuestion(request.slot || SLOTS[0], request.mediaContext || '', undefined, sendResponse);
+        return true;
     } else if (request.action === "list_models") {
-        getKeys()
+        getProviderSettings()
             .then(fetchAvailableModels)
             .then(sendResponse)
             .catch((e) => sendResponse({ models: [], errors: [e.message] }));
@@ -155,11 +170,12 @@ const PROMPT = `
     1. Read the question text.
     2. Identify the answer options.
     3. Determine which option is correct based on your knowledge.
-    4. If there is a checkmark indicating a previous correct answer, use that.
 
     Support single-choice and true/false via visible option colors, multiple-choice via all correct colors,
     typed answers via text, puzzles via an ordered list of visible option labels, and sliders via a number.
     Never guess missing question text, audio/video content or personal survey preferences.
+    If the screenshot shows only colored buttons without the question and choices,
+    return an unknown result explaining that the question and choices must be visible on the captured tab.
     For these additional types output exactly one of:
     {"type":"multiple","colors":["red","blue"]}
     {"type":"text","text":"answer"}
@@ -180,11 +196,11 @@ function buildPrompt(mediaContext = '') {
 }
 
 async function analyzeImage(apiKey, base64Image, model, mediaContext = '') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
-    const response = await apiFetch(url, {
+    const result = await apiFetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
             contents: [{
                 parts: [
@@ -193,15 +209,11 @@ async function analyzeImage(apiKey, base64Image, model, mediaContext = '') {
                 ]
             }]
         })
-    });
+    }, 'Gemini answer request');
 
-    if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`${model} Error: ${response.status} - ${errText}`);
-    }
-
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('');
+    const candidate = result.candidates?.[0];
+    if (candidate?.finishReason === 'MAX_TOKENS') throw new Error('The model response was truncated. Try another model.');
+    const text = candidate?.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
     if (!text) throw new Error('Gemini returned no answer (possibly blocked or truncated).');
     return parseResponse(text);
 }
@@ -259,33 +271,39 @@ function validateStructuredAnswer(result) {
 }
 
 async function analyzeImageOpenAI(apiKey, base64Image, model, baseUrl, mediaContext = '') {
-    const response = await apiFetch(`${normalizeOpenAIBaseUrl(baseUrl)}/chat/completions`, {
+    const base = normalizeOpenAIBaseUrl(baseUrl);
+    const imageUrl = `data:image/png;base64,${base64Image}`;
+    const prompt = buildPrompt(mediaContext);
+    const official = base === DEFAULT_OPENAI_BASE_URL;
+    const endpoint = official ? 'responses' : 'chat/completions';
+    const body = official
+        ? { model, store: false, input: [{ role: 'user', content: [
+            { type: 'input_text', text: prompt },
+            { type: 'input_image', image_url: imageUrl, detail: 'auto' }
+        ] }] }
+        : { model, messages: [{ role: 'user', content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } }
+        ] }] };
+
+    const result = await apiFetch(`${base}/${endpoint}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-            model: model,
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: buildPrompt(mediaContext) },
-                        { type: "image_url", image_url: { url: `data:image/png;base64,${base64Image}` } }
-                    ]
-                }
-            ]
-        })
-    });
+        body: JSON.stringify(body)
+    }, 'OpenAI answer request');
 
-    if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`OpenAI Error: ${response.status} - ${errText}`);
+    if (official) {
+        if (result.status === 'incomplete') throw new Error('OpenAI returned an incomplete answer. Try another model.');
+        const parts = (result.output || []).filter(item => item.type === 'message').flatMap(item => item.content || []);
+        if (parts.some(part => part.type === 'refusal')) throw new Error('The model declined to answer.');
+        return parseResponse(parts.filter(part => part.type === 'output_text').map(part => part.text).join(''));
     }
 
-    const result = await response.json();
-    if (result.choices?.[0]?.finish_reason === 'length') throw new Error('The model response was truncated. Try another model.');
-    const text = result.choices?.[0]?.message?.content;
-    return parseResponse(text);
+    const choice = result.choices?.[0];
+    if (choice?.finish_reason === 'length') throw new Error('The model response was truncated. Try another model.');
+    if (choice?.message?.refusal || choice?.finish_reason === 'content_filter') throw new Error('The model declined to answer.');
+    return parseResponse(choice?.message?.content);
 }
