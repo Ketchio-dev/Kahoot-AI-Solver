@@ -1,6 +1,6 @@
 # Privacy policy — Kahoot AI Solver
 
-Last updated November 23, 2026. Covers the Chrome Web Store release and unpacked builds through 2.0.0.
+Last updated November 23, 2026. Covers the Chrome Web Store release and unpacked builds through 2.0.1.
 
 Kahoot AI Solver is an independent Chrome extension maintained by Ketchio-dev. It suggests answers to visible quiz questions using the AI API account and model you select. It does not operate a developer backend for processing screenshots or storing your API keys.
 
