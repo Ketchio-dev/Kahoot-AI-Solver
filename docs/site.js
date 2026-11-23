@@ -1,57 +1,89 @@
-// Display preview only. It makes no network requests, captures no screen and stores nothing.
+// The preview uses local examples and never captures the screen.
 (() => {
   const stage = document.getElementById('stage');
+  const topic = document.getElementById('quiz-topic');
+  const question = document.getElementById('quiz-question');
+  const answers = [...stage.querySelectorAll('.ans')];
   const overlay = document.getElementById('overlay');
   const run = document.getElementById('run');
-  const note = document.getElementById('stage-note');
+  const next = document.getElementById('next');
   const status = document.getElementById('stage-status');
+  const modeGroup = document.querySelector('.seg');
   const controls = document.querySelector('.stage-controls');
-  if (!stage || !overlay || !run || !note || !status || !controls) return;
-
-  const modeButtons = controls.querySelectorAll('[data-mode]');
+  const modes = modeGroup.querySelectorAll('button');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const NOTES = {
-    normal: 'Simulated display with a sample question. No AI request is made and nothing is captured. In the real extension the panel stays for 15 seconds.',
-    stealth: 'Simulated display. Stealth shows a 14 px dot in the corner for single-choice answers, for 8 seconds. It still appears in screenshots and screen sharing.'
-  };
-  const ANSWER_LABEL = 'Example suggestion shown: green, Mars.';
 
+  const examples = [
+    { topic: 'Astronomy', question: 'Which planet is known as the Red Planet?', options: ['Earth', 'Venus', 'Jupiter', 'Mars'], answer: 3 },
+    { topic: 'Geography', question: 'Which city is the capital of Canada?', options: ['Toronto', 'Ottawa', 'Montréal', 'Vancouver'], answer: 1 },
+    { topic: 'Science', question: 'Which gas do plants take in for photosynthesis?', options: ['Oxygen', 'Helium', 'Carbon dioxide', 'Hydrogen'], answer: 2 }
+  ];
+  const colors = ['red', 'blue', 'yellow', 'green'];
+  const shapes = ['▲', '◆', '●', '■'];
+  let index = 0;
   let mode = 'normal';
+  let state = 'idle';
   let timer;
 
-  function paint(state) {
-    const stealth = mode === 'stealth';
-    const pending = state === 'pending';
-    overlay.className = 'ovl ' + (stealth ? 'ovl-stealth' : 'ovl-normal') + (pending ? ' pending' : ' ovl-green');
-    overlay.textContent = pending ? (stealth ? '' : 'Analyzing question…') : (stealth ? '■' : '■ GREEN');
+  function render() {
+    const example = examples[index];
+    const color = colors[example.answer];
+    const shape = shapes[example.answer];
+    const compact = mode === 'stealth';
+    topic.textContent = example.topic;
+    question.textContent = example.question;
+    for (const [optionIndex, element] of answers.entries()) {
+      element.querySelector('span').textContent = example.options[optionIndex];
+      element.toggleAttribute('data-highlight', state === 'shown' && !compact && example.answer === optionIndex);
+    }
+
     stage.dataset.mode = mode;
+    overlay.hidden = state === 'idle';
+    overlay.className = state === 'shown'
+      ? `ovl ovl-${mode} ovl-${color}`
+      : 'ovl';
+    overlay.textContent = state === 'pending'
+      ? 'Analyzing example…'
+      : compact ? shape : `${shape} ${color.toUpperCase()} · ${example.options[example.answer]}`;
+    run.disabled = state === 'pending';
   }
 
   function showAnswer() {
-    paint('shown');
-    status.textContent = ANSWER_LABEL;
+    state = 'shown';
+    render();
+    const example = examples[index];
+    status.textContent = `Example suggestion: ${colors[example.answer]}, ${example.options[example.answer]}.`;
   }
 
   run.addEventListener('click', () => {
-    clearTimeout(timer);
     status.textContent = '';
     if (reduceMotion.matches) {
       showAnswer();
       return;
     }
-    paint('pending');
-    timer = setTimeout(showAnswer, 900);
+    state = 'pending';
+    status.textContent = 'Analyzing example.';
+    render();
+    timer = setTimeout(showAnswer, 500);
   });
 
-  for (const button of modeButtons) {
+  next.addEventListener('click', () => {
+    clearTimeout(timer);
+    state = 'idle';
+    index = (index + 1) % examples.length;
+    render();
+    status.textContent = examples[index].question;
+  });
+
+  for (const button of modes) {
     button.addEventListener('click', () => {
-      clearTimeout(timer);
-      mode = button.dataset.mode === 'stealth' ? 'stealth' : 'normal';
-      for (const other of modeButtons) other.setAttribute('aria-pressed', String(other === button));
-      note.textContent = NOTES[mode];
-      showAnswer();
+      mode = button.dataset.mode;
+      for (const other of modes) other.setAttribute('aria-pressed', String(other === button));
+      render();
     });
   }
 
   controls.hidden = false;
+  modeGroup.hidden = false;
+  render();
 })();

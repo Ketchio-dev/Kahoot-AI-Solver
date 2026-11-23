@@ -6,7 +6,7 @@ Chrome extension for asking a Gemini, OpenAI or compatible model about the quiz 
 
 ## Install 2.0.0
 
-Unzip the 2.0.0 package or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
+Download and unzip [the 2.0.0 package](https://ketchio-dev.github.io/Kahoot-AI-Solver/downloads/kahoot-ai-solver-2.0.0.zip) or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
 
 As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens with an old “Youtube Ad Blocker” cover. In that version select **···** to reach AI settings. The unpacked 2.0.0 opens directly to **Kahoot AI Solver**.
 
@@ -52,4 +52,4 @@ With `playwright-core` installed, run `E2E_CHROME_PATH=/path/to/chrome node test
 
 For the optional real-provider test, also supply `E2E_API_KEY`, `E2E_BASE_URL`, `E2E_MODEL_ID` and `E2E_SECOND_MODEL_ID`, then run `node tests/e2e.cjs`. Use an OpenAI-compatible server with two available image-capable models. The test sends screenshots of synthetic questions to that server.
 
-The [project site](https://ketchio-dev.github.io/Kahoot-AI-Solver/) is built from `docs/`. To regenerate the icons, social image and privacy page, install `@resvg/resvg-js` and run `node tools/build-site.cjs`.
+The [project site](https://ketchio-dev.github.io/Kahoot-AI-Solver/) is built from `docs/`. The site and popup include [Lucide Static icons](https://lucide.dev/) with their [license](docs/assets/lucide-LICENSE.txt). To regenerate the icons, social image and privacy page, install `@resvg/resvg-js` and run `node tools/build-site.cjs`.

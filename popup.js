@@ -26,14 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
     SLOTS.forEach((slot, index) => {
       const model = saved[slot];
       const configured = Boolean(model?.id && keyFor(model.provider));
+      el(`slotCard${index + 1}`).setAttribute('data-featured', String(configured && !ready));
       ready ||= configured;
       el(`model${index + 1}`).textContent = model?.id
         ? `${providerName(model.provider)} · ${model.id}`
         : 'No model selected';
       el(`solveSlot${index + 1}`).disabled = !configured || solving || saving || pendingSlots.has(slot);
     });
-    el('homeStatus').textContent = ready ? 'Open a quiz tab with the question and choices visible.'
-      : 'Open Settings to add an API key and choose a model.';
+    el('homeStatus').textContent = ready ? 'Keep the question and choices visible in the active tab.'
+      : 'Add an API key and choose a model to start.';
+    el('setupAction').hidden = ready;
+    el('setupActionLabel').textContent = hasProvider() ? 'Choose a model' : 'Connect a provider';
   }
 
   function renderSlots() {
@@ -194,13 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  toggle.addEventListener('click', () => {
-    const show = el('settings-view').style.display === 'none';
+  function showSettings(show) {
     el('settings-view').style.display = show ? 'block' : 'none';
     el('home-view').style.display = show ? 'none' : 'block';
-    toggle.textContent = show ? 'Back' : 'Settings';
+    el('toggleViewLabel').textContent = show ? 'Back' : 'Settings';
     toggle.setAttribute('aria-label', show ? 'Back to home' : 'Open AI settings');
     toggle.setAttribute('aria-expanded', String(show));
     if (show && loaded && !listRequest) void loadModels();
+  }
+
+  toggle.addEventListener('click', () => showSettings(el('settings-view').style.display === 'none'));
+  el('setupAction').addEventListener('click', () => {
+    showSettings(true);
+    (hasProvider() && !el('slot1').disabled ? el('slot1') : geminiKey).focus();
   });
 });

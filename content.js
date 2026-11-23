@@ -48,8 +48,14 @@ function showAnswer(answer) {
     if (typeof answer === 'string') {
         const style = ANSWER_STYLES[answer.trim().toLowerCase()];
         if (!style) return showError('Invalid answer.');
-        indicator.style.backgroundColor = style.color;
-        text = displayMode === 'stealth' ? style.icon : `${style.icon} ${answer.toUpperCase()}`;
+        if (displayMode === 'stealth') {
+            indicator.style.backgroundColor = style.color;
+            if (style.icon === '●') indicator.style.color = '#24160d';
+            text = style.icon;
+        } else {
+            indicator.style.borderInlineStartColor = style.color;
+            text = `${style.icon} ${answer.toUpperCase()}`;
+        }
     } else if (answer.type === 'multiple') {
         text = answer.colors.map(color => ANSWER_STYLES[color]?.icon || '?').join(' ');
         if (displayMode !== 'stealth') text = `Select all: ${text}\n${answer.colors.join(', ')}`;
@@ -71,6 +77,7 @@ function showError(message) {
     console.warn('Kahoot AI error:', message);
     const indicator = createIndicator();
     indicator.className = 'kahoot-normal-panel';
+    indicator.style.borderInlineStartColor = '#ff8794';
     indicator.textContent = `Error: ${message}`;
     indicator.title = message;
 

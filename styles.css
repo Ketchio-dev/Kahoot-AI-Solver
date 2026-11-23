@@ -1,5 +1,4 @@
-/* Small corner indicator. Everything else is intentionally minimal so the
-   extension leaves no obvious footprint on the page. */
+/* Answer and request feedback for the active tab. */
 
 .kahoot-stealth-indicator {
   position: fixed;
@@ -65,5 +64,11 @@
 
   50% {
     opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kahoot-stealth-indicator.kahoot-stealth-indicator--pending {
+    animation: none;
   }
 }

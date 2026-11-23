@@ -23,7 +23,7 @@ test('popup persists settings before a permission prompt can destroy it', async 
   let loaded;
   const elements = new Map();
   const element = id => {
-    if (!elements.has(id)) elements.set(id, { value: '', style: {}, getAttribute() { return null; }, replaceChildren() {}, add() {}, addEventListener(event, fn) { this[event] = fn; } });
+    if (!elements.has(id)) elements.set(id, { value: '', style: {}, getAttribute() { return null; }, setAttribute() {}, replaceChildren() {}, add() {}, addEventListener(event, fn) { this[event] = fn; } });
     return elements.get(id);
   };
   let saved;
@@ -79,13 +79,13 @@ test('popup uses truthful product branding and toggles accessible settings in bo
   toggle.click();
   assert.equal(element('settings-view').style.display, 'block');
   assert.equal(element('home-view').style.display, 'none');
-  assert.equal(toggle.textContent, 'Back');
+  assert.equal(element('toggleViewLabel').textContent, 'Back');
   assert.equal(toggle.attributes['aria-label'], 'Back to home');
   assert.equal(toggle.attributes['aria-expanded'], 'true');
   toggle.click();
   assert.equal(element('settings-view').style.display, 'none');
   assert.equal(element('home-view').style.display, 'block');
-  assert.equal(toggle.textContent, 'Settings');
+  assert.equal(element('toggleViewLabel').textContent, 'Settings');
   assert.equal(toggle.attributes['aria-label'], 'Open AI settings');
   assert.equal(toggle.attributes['aria-expanded'], 'false');
 });
