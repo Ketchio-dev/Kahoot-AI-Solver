@@ -81,7 +81,7 @@
         <h1 id="hero-title">Get a second look at <em>your quiz.</em></h1>
         <p class="lede">Kahoot AI Solver sends the visible question to the model you choose and shows an answer suggestion right on the page.</p>
         <div class="cta-row">
-          <a class="btn btn-red" id="install" href="#setup">Install 2.0.1 <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></a>
+          <a class="btn btn-red" id="install" href="#setup">Install 2.0.2 <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></a>
           <a class="btn btn-secondary" href="#demo"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Try the demo</a>
         </div>
         <p class="fineprint">Use your own Gemini, OpenAI or compatible API key.</p>
@@ -150,17 +150,17 @@
       <div>
         <h2 id="setup-title">Set up the extension</h2>
         <ol class="setup-steps">
-          <li><div><h3>Load the 2.0.1 build</h3><p>Download the 2.0.1 ZIP and unzip it. At <code>chrome://extensions/</code>, turn on Developer mode and select <b>Load unpacked</b>. Pick the folder containing <code>manifest.json</code>.</p>
-          <a class="link" href="downloads/kahoot-ai-solver-2.0.1.zip" download><svg class="ico" aria-hidden="true"><use href="#i-download"/></svg>Download 2.0.1 ZIP</a></div></li>
+          <li><div><h3>Load the 2.0.2 build</h3><p>Download the 2.0.2 ZIP and unzip it. At <code>chrome://extensions/</code>, turn on Developer mode and select <b>Load unpacked</b>. Pick the folder containing <code>manifest.json</code>.</p>
+          <a class="link" href="downloads/kahoot-ai-solver-2.0.2.zip" download><svg class="ico" aria-hidden="true"><use href="#i-download"/></svg>Download 2.0.2 ZIP</a></div></li>
           <li><div><h3>Connect your API key</h3><p>Open Settings, enter your provider key and select <b>Save keys &amp; load models</b>. For a compatible server, use its HTTPS API base URL ending in <code>/v1</code>.</p>
           <div class="key-links"><a class="link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Gemini key <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a><a class="link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI key <svg class="ico" aria-hidden="true"><use href="#i-up"/></svg></a></div></div></li>
           <li id="models"><div><h3>Pick a model and solve</h3><p>Choose an image-capable model in any slot. Show the question and choices on the active tab, then click Solve or use the displayed shortcut.</p>
-          <div class="key-strip" aria-label="Default shortcuts"><span><kbd>Alt</kbd> + <kbd>Z</kbd></span><span><kbd>Alt</kbd> + <kbd>X</kbd></span><span><kbd>Alt</kbd> + <kbd>C</kbd></span><small>Option on Mac</small></div></div></li>
+          <div class="key-strip" aria-label="Default shortcuts"><span><kbd>Alt</kbd> + <kbd>Z</kbd></span><span><kbd>Alt</kbd> + <kbd>X</kbd></span><span><kbd>Alt</kbd> + <kbd>C</kbd></span><small>Option on Mac</small></div><p>Click <b>Change shortcuts</b> in the popup to edit any of the three keys in Chrome.</p></div></li>
         </ol>
       </div>
       <figure class="shot">
-        <img src="assets/popup.webp" width="398" height="435" loading="lazy" alt="The extension’s home screen with three shortcut slots, saved model names and Solve buttons.">
-        <figcaption>2.0.1 extension popup</figcaption>
+        <img src="assets/popup.webp" width="398" height="475" loading="lazy" alt="The extension’s home screen with three shortcut slots, saved model names and Solve buttons.">
+        <figcaption>2.0.2 extension popup</figcaption>
       </figure>
     </section>
 
@@ -172,7 +172,7 @@
           <a class="link" href="privacy.html">Privacy policy <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></a>
         </div>
         <div class="faq-list">
-          <details><summary>Why does the store version say “Youtube Ad Blocker”? <svg class="ico" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p>That cover appears in store version 1.4.0. Use the three-dot button to open its AI settings. The 2.0.1 unpacked build opens straight to Kahoot AI Solver.</p></details>
+          <details><summary>Why does the store version say “Youtube Ad Blocker”? <svg class="ico" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p>That cover appears in store version 1.4.0. Use the three-dot button to open its AI settings. The 2.0.2 unpacked build opens straight to Kahoot AI Solver.</p></details>
           <details><summary>What if I only see colored buttons in Kahoot? <svg class="ico" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p>Ask the quiz host to enable questions and answers on participant screens. The extension needs the question text and choices visible on the captured tab.</p></details>
           <details><summary>Which answer formats are supported? <svg class="ico" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p>Single choice, multiple choice, typed answers, ordered choices and slider values. For an audio or video question, you can include a transcript with the popup's Solve button.</p></details>
           <details><summary>Why does my model reject the screenshot? <svg class="ico" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p>Model lists may omit image support or API compatibility. Choose a model that accepts images and check the account’s permissions and usage limit.</p></details>

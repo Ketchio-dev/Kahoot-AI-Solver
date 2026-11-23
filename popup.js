@@ -1,4 +1,5 @@
 const SLOTS = ['slot1', 'slot2', 'slot3'];
+const SHORTCUT_SETTINGS_URL = 'chrome://extensions/shortcuts';
 
 document.addEventListener('DOMContentLoaded', () => {
   const el = id => document.getElementById(id);
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     SLOTS.forEach((_, index) => {
       const shortcut = el(`shortcut${index + 1}`);
       shortcut.textContent = shortcuts.get(`solve-slot-${index + 1}`) || 'Unassigned';
-      shortcut.title = 'Manage keyboard shortcuts at chrome://extensions/shortcuts';
+      shortcut.title = 'Current Chrome keyboard shortcut';
     });
   }).catch(() => {});
 
@@ -149,6 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
       saving = false;
       el('saveBtn').disabled = false;
       renderSlots();
+    }
+  });
+
+  el('manageShortcuts').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await chrome.tabs.create({ url: SHORTCUT_SETTINGS_URL });
+    } catch {
+      solveStatus.textContent = `Open ${SHORTCUT_SETTINGS_URL} to change shortcuts.`;
+    } finally {
+      button.disabled = false;
     }
   });
 

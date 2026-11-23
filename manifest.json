@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Kahoot AI Solver - Smart Assistant",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Get AI answer suggestions for Kahoot with a keyboard shortcut. Connect your own Gemini, OpenAI or compatible API account.",
     "author": "Junsu",
     "icons": {

@@ -4,11 +4,11 @@ Chrome extension for asking a Gemini, OpenAI or compatible model about the quiz 
 
 [Project site](https://ketchio-dev.github.io/Kahoot-AI-Solver/) · [Privacy policy](https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html) · [Chrome Web Store](https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp)
 
-## Install 2.0.1
+## Install 2.0.2
 
-Download and unzip [the 2.0.1 package](https://ketchio-dev.github.io/Kahoot-AI-Solver/downloads/kahoot-ai-solver-2.0.1.zip) or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
+Download and unzip [the 2.0.2 package](https://ketchio-dev.github.io/Kahoot-AI-Solver/downloads/kahoot-ai-solver-2.0.2.zip) or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
 
-As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens with an old “Youtube Ad Blocker” cover. In that version select **···** to reach AI settings. The unpacked 2.0.1 opens directly to **Kahoot AI Solver**.
+As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens with an old “Youtube Ad Blocker” cover. In that version select **···** to reach AI settings. The unpacked 2.0.2 opens directly to **Kahoot AI Solver**.
 
 ## Connect a provider and solve
 
@@ -16,7 +16,7 @@ As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens
 2. Click **Save keys & load models**. Select an image-capable model in any slot. The first slot is enough to get started. Chrome keeps your selection, provider settings and display preference in this browser profile.
 3. Bring a tab that shows the question **and** its answer choices to the front. Click **Solve** next to your model on the popup home screen, or press its assigned keyboard shortcut. The reply appears in the bottom-right corner.
 
-The default shortcuts for slots 1–3 are **Alt+Z**, **Alt+X**, and **Alt+C** (Option on macOS). The popup shows Chrome's actual bindings. If a slot shows **Unassigned**, set a shortcut at `chrome://extensions/shortcuts` or use its Solve button.
+The default shortcuts for slots 1–3 are **Alt+Z**, **Alt+X**, and **Alt+C** (Option on macOS). Click **Change shortcuts** in the popup to open `chrome://extensions/shortcuts`. Under **Kahoot AI Solver**, edit or clear a key under **Solve with model slot 1**, **2**, or **3**. Reopen the popup to see the new binding. If Chrome shows a slot as **Unassigned**, its Solve button still works.
 
 When a live Kahoot participant tab shows only colored buttons, the host can turn on **Show questions & answers on participants’ devices**. [Kahoot setup guide](https://support.kahoot.com/hc/en-us/articles/115003197928-How-to-enable-See-questions-on-participant-s-screen-in-Kahoot-live-games)
 

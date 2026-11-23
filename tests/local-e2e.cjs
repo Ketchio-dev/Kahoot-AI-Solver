@@ -293,6 +293,23 @@ async function main() {
     await checkLayout(popup, 'restricted-tab error');
     await saveScreenshot(popup, 'home-restricted-error');
     assert.equal(solves.length, 8);
+    const settingsTab = browser.waitForEvent('page');
+    await popup.click('#manageShortcuts').catch(error => {
+      if (!/Target|session/i.test(error.message)) throw error;
+    });
+    const shortcuts = await settingsTab;
+    await shortcuts.waitForURL('chrome://extensions/shortcuts');
+    const slot3 = shortcuts.locator('.command-entry').filter({ hasText: 'Solve with model slot 3' });
+    await slot3.getByRole('button', { name: /Edit shortcut/ }).click();
+    await slot3.locator('cr-shortcut-input input').press('Alt+Shift+Y');
+    const binding = await waitFor(() => worker.evaluate(async () => {
+      const command = (await chrome.commands.getAll()).find(entry => entry.name === 'solve-slot-3');
+      return command?.shortcut?.endsWith('Y') ? command.shortcut : '';
+    }), 'Chrome saving the new shortcut');
+    await shortcuts.close();
+    popup = await openToolbarPopup(cdp, worker);
+    await popupState(`document.querySelector("#shortcut3").textContent === ${JSON.stringify(binding)}`);
+    console.log('Rebound slot 3 in Chrome and verified the updated label in the native popup.');
     console.log('Chrome toolbar popup passed: first-run setup, long model names, both themes, transcript field, capture, all answer formats, compact mode, API error and restricted-tab feedback.');
   } finally {
     try {
