@@ -28,9 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const configured = Boolean(model?.id && keyFor(model.provider));
       el(`slotCard${index + 1}`).setAttribute('data-featured', String(configured && !ready));
       ready ||= configured;
-      el(`model${index + 1}`).textContent = model?.id
+      const modelLabel = el(`model${index + 1}`);
+      modelLabel.textContent = model?.id
         ? `${providerName(model.provider)} · ${model.id}`
         : 'No model selected';
+      modelLabel.title = modelLabel.textContent;
       el(`solveSlot${index + 1}`).disabled = !configured || solving || saving || pendingSlots.has(slot);
     });
     el('homeStatus').textContent = ready ? 'Keep the question and choices visible in the active tab.'

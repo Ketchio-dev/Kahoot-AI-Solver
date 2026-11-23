@@ -4,11 +4,11 @@ Chrome extension for asking a Gemini, OpenAI or compatible model about the quiz 
 
 [Project site](https://ketchio-dev.github.io/Kahoot-AI-Solver/) · [Privacy policy](https://ketchio-dev.github.io/Kahoot-AI-Solver/privacy.html) · [Chrome Web Store](https://chromewebstore.google.com/detail/fgpbceoplppnfodmjcengikbefngpjfp)
 
-## Install 2.0.0
+## Install 2.0.1
 
-Download and unzip [the 2.0.0 package](https://ketchio-dev.github.io/Kahoot-AI-Solver/downloads/kahoot-ai-solver-2.0.0.zip) or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
+Download and unzip [the 2.0.1 package](https://ketchio-dev.github.io/Kahoot-AI-Solver/downloads/kahoot-ai-solver-2.0.1.zip) or use the repository checkout containing `manifest.json`. In Chrome open `chrome://extensions/`, turn on **Developer mode**, select **Load unpacked**, and choose that folder. Disable the store copy if both are installed so they do not compete for shortcuts.
 
-As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens with an old “Youtube Ad Blocker” cover. In that version select **···** to reach AI settings. The unpacked 2.0.0 opens directly to **Kahoot AI Solver**.
+As of November 23, 2026, the Chrome Web Store serves **v1.4.0**. Its popup opens with an old “Youtube Ad Blocker” cover. In that version select **···** to reach AI settings. The unpacked 2.0.1 opens directly to **Kahoot AI Solver**.
 
 ## Connect a provider and solve
 
@@ -48,7 +48,7 @@ python3 tools/package-extension.py
 
 The packaging script creates and checks `store-assets/kahoot-ai-solver-<version>.zip`. The ZIP contains just the ten files Chrome needs.
 
-With `playwright-core` installed, run `E2E_CHROME_PATH=/path/to/chrome node tests/local-e2e.cjs` to test the unpacked extension against a local mock API. The test grants permissions in its temporary copy. Physical shortcuts, native permission prompts and live provider accounts require separate testing.
+With `playwright-core` installed, run `E2E_CHROME_PATH=/path/to/chrome node tests/local-e2e.cjs` to test the unpacked extension against a local mock API. The test opens Chrome’s native toolbar popup with no preset viewport. It checks first-run and configured layouts, long model IDs, both themes, expandable controls and answer feedback. The temporary test copy pre-grants permissions. Set `E2E_UI_ARTIFACTS` to a directory to save popup screenshots. Native permission prompts and live provider accounts require separate testing.
 
 For the optional real-provider test, also supply `E2E_API_KEY`, `E2E_BASE_URL`, `E2E_MODEL_ID` and `E2E_SECOND_MODEL_ID`, then run `node tests/e2e.cjs`. Use an OpenAI-compatible server with two available image-capable models. The test sends screenshots of synthetic questions to that server.
 

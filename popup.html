@@ -20,7 +20,8 @@
 
     * { box-sizing: border-box; }
     body {
-      width: min(398px, 100vw);
+      /* Chrome sizes the toolbar popup from its content before its viewport exists. */
+      width: 398px;
       margin: 0;
       background: var(--page);
       color: var(--ink);
@@ -39,7 +40,7 @@
       background: var(--surface);
     }
 
-    .brandbar img { border-radius: 9px; }
+    .brandbar img { flex: none; border-radius: 9px; }
     h1 { flex: 1; margin: 0; font-size: 16px; letter-spacing: -.035em; }
     h2 { margin: 0; font-size: 15px; letter-spacing: -.025em; }
     p { margin: 0; }
@@ -104,7 +105,13 @@
     .slot-row:nth-of-type(2) { --mark: #77c1ff; }
     .slot-row:nth-of-type(3) { --mark: #ffcf65; }
     .slot-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-    .slot-row small { overflow-wrap: anywhere; }
+    .slot-row small {
+      display: -webkit-box;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
     kbd {
       padding: 1px 5px;
       border: 1px solid var(--line);
@@ -154,6 +161,22 @@
       font-weight: 400;
     }
 
+    .provider-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .provider-fields .field { margin: 8px 0 0; }
+    .field-inline {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-inline select { margin: 0; }
+    .answer-display { grid-template-columns: 99px minmax(0, 1fr); }
     details { margin: 10px 0; }
     details.context-panel { margin: 10px 0 0; }
     summary {
@@ -289,12 +312,14 @@ SOFTWARE.
   <main id="settings-view" style="display: none">
     <section class="sheet" aria-labelledby="providers">
       <h2 id="providers">API providers</h2>
-      <label class="field">Gemini API key
-        <input type="password" id="apiKey" autocomplete="off">
-      </label>
-      <label class="field">OpenAI or compatible API key
-        <input type="password" id="openaiApiKey" autocomplete="off">
-      </label>
+      <div class="provider-fields">
+        <label class="field">Gemini API key
+          <input type="password" id="apiKey" autocomplete="off">
+        </label>
+        <label class="field">OpenAI or compatible key
+          <input type="password" id="openaiApiKey" autocomplete="off">
+        </label>
+      </div>
       <details id="customEndpoint">
         <summary>Custom server <svg class="icon caret" aria-hidden="true"><use href="#icon-chevron-down"/></svg></summary>
         <label class="field">API base URL (include /v1)
@@ -310,14 +335,14 @@ SOFTWARE.
         <h2 id="models">Model slots</h2>
         <button id="refreshBtn" disabled><svg class="icon" aria-hidden="true"><use href="#icon-refresh-cw"/></svg>Refresh model list</button>
       </div>
-      <label class="field">Slot 1 <select id="slot1" disabled></select></label>
-      <label class="field">Slot 2 <select id="slot2" disabled></select></label>
-      <label class="field">Slot 3 <select id="slot3" disabled></select></label>
+      <label class="field field-inline">Slot 1 <select id="slot1" disabled></select></label>
+      <label class="field field-inline">Slot 2 <select id="slot2" disabled></select></label>
+      <label class="field field-inline">Slot 3 <select id="slot3" disabled></select></label>
       <div id="modelStatus" class="status" role="status"></div>
     </section>
 
     <div class="sheet">
-      <label class="field">Answer display
+      <label class="field field-inline answer-display">Answer display
         <select id="displayMode">
           <option value="normal">Answer panel</option>
           <option value="stealth">Compact corner indicator</option>
