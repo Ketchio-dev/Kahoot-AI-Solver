@@ -1,173 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <title>Kahoot AI Solver — Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kahoot AI Solver</title>
   <style>
-    body {
-      position: relative;
-      width: 360px;
-      color: #243047;
-      background: #f7f9fc;
-      padding: 15px;
-      font-family: sans-serif;
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 16px;
-    }
-
-    .form-group {
-      margin-bottom: 10px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 12px;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    select {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: white;
-    }
-
-    button {
-      width: 100%;
-      padding: 8px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    button:hover:not(:disabled) {
-      filter: brightness(0.94);
-    }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    input:focus-visible, select:focus-visible, button:focus-visible {
-      outline: 2px solid #4285f4;
-      outline-offset: 2px;
-    }
-
-    small { display: block; margin-top: 6px; color: #667085; line-height: 1.4; }
-
-    .slot-row {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .slot-row button {
-      width: 90px;
-      flex: none;
-      background-color: #34a853;
-      font-size: 12px;
-    }
-
-    #status {
-      margin-top: 10px;
-      font-size: 12px;
-      color: green;
-      text-align: center;
-      display: none;
-    }
-
-    #home-view { text-align: center; padding-top: 38px; }
-    #home-view img { display: block; margin: 0 auto 16px; }
-    #home-view h2 { font-size: 22px; margin-bottom: 8px; }
-    #home-view p { font-size: 13px; line-height: 1.6; color: #667085; }
-    .shortcuts { display: flex; justify-content: center; gap: 10px; margin: 22px 0; }
-    kbd { border: 1px solid #ccd3df; border-bottom-width: 3px; border-radius: 5px; padding: 7px 10px; background: white; font-size: 12px; }
-    #toggleViewBtn { position: absolute; top: 10px; right: 10px; width: auto; min-height: 28px; padding: 4px 8px; background: none; color: #243047; font-size: 12px; }
-
-    #modelStatus {
-      margin-top: 6px;
-      font-size: 11px;
-      color: #888;
-      text-align: center;
-    }
+    :root { color-scheme: light dark; --panel: light-dark(#f5f3fa, #231d32); --ink: light-dark(#221a36, #f6f0ff); --muted: light-dark(#5c536e, #c7bcdb); --line: light-dark(#ded6eb, #4d405f); --primary: light-dark(#592acc, #bba1fa); }
+    * { box-sizing: border-box; }
+    body { width: 360px; margin: 0; padding: 16px; font: 13px/1.45 system-ui, sans-serif; color: var(--ink); background: Canvas; }
+    header { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    h1 { margin: 0; font-size: 16px; flex: 1; }
+    h2 { margin: 0 0 8px; font-size: 14px; }
+    p { margin: 0 0 10px; }
+    small { display: block; margin-top: 4px; color: var(--muted); }
+    section { margin-bottom: 14px; }
+    .slot-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; margin: 6px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .slot-row small { margin: 0; overflow-wrap: anywhere; }
+    .field { display: block; margin: 8px 0; }
+    .field input, .field select, .field textarea { display: block; width: 100%; margin-top: 3px; }
+    input, select, textarea, button { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: Canvas; }
+    button { cursor: pointer; font-weight: 600; }
+    button:disabled { opacity: .55; cursor: default; }
+    button.primary { border-color: var(--primary); background: var(--primary); color: light-dark(white, #201330); }
+    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    details { margin: 10px 0; }
+    summary { cursor: pointer; color: var(--muted); }
+    textarea { resize: vertical; }
+    kbd { font: 11px ui-monospace, monospace; color: var(--muted); }
+    .status { margin-top: 6px; color: var(--muted); overflow-wrap: anywhere; }
   </style>
 </head>
-
 <body>
-  <button id="toggleViewBtn" aria-label="Open AI settings" aria-expanded="false" aria-controls="settings-view">Settings</button>
+  <header>
+    <img src="icon128.png" alt="" width="32" height="32">
+    <h1>Kahoot AI Solver</h1>
+    <button id="toggleViewBtn" aria-label="Open AI settings" aria-expanded="false" aria-controls="settings-view">Settings</button>
+  </header>
 
-  <div id="home-view">
-    <img src="icon128.png" alt="" width="64" height="64">
-    <h2>Kahoot AI Solver</h2>
-    <p>Ask your AI model about the question on screen.</p>
-    <div class="shortcuts" aria-label="Model shortcuts"><kbd>Alt+Z</kbd><kbd>Alt+X</kbd><kbd>Alt+C</kbd></div>
-    <p>Connect your API key in <b>Settings</b>, then assign a model to each shortcut. Use Option on Mac.</p>
-    <small>Review the suggestion before answering. Use AI only where it is allowed.</small>
-  </div>
-
-  <div id="settings-view" style="display: none; padding-top: 30px;">
-    <h2>AI settings</h2>
-    <p style="font-size: 12px; color: #667085;">Add an API key, then choose a model for each shortcut.</p>
-    <div class="form-group">
-      <label for="apiKey">Gemini API Key:</label>
-      <input type="password" id="apiKey" placeholder="Enter your Gemini API Key">
-    </div>
-    <div class="form-group">
-      <label for="openaiApiKey">OpenAI API Key:</label>
-      <input type="password" id="openaiApiKey" placeholder="Enter your OpenAI API Key">
-    </div>
-    <div class="form-group">
-      <label for="openaiBaseUrl">OpenAI-compatible API URL (including /v1):</label>
-      <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
-      <small>HTTP sends keys and screenshots without encryption. Use only a trusted network.</small>
-    </div>
-    <button id="saveBtn" style="margin-bottom: 10px;">Save Keys &amp; Reload Models</button>
-    <hr>
-
-    <div class="form-group">
-      <label for="displayMode">Answer display</label>
-      <select id="displayMode"><option value="normal">Normal · readable answer panel</option><option value="stealth">Stealth · compact corner indicator</option></select>
-      <small>Both displays are visible in screenshots and screen sharing.</small>
-    </div>
-    <div class="form-group">
-      <label for="mediaContext">Audio/video context · optional</label>
-      <textarea id="mediaContext" maxlength="6000" rows="3" placeholder="Paste a transcript, captions or notes about the clip." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
-      <small>Included only with popup solves; cleared when the popup closes. Shortcuts send the screenshot alone. No audio recording.</small>
-    </div>
-    <label>Choose a model for each shortcut:</label>
+  <main id="home-view">
+    <p id="homeStatus" role="status">Loading saved settings…</p>
     <div class="slot-row">
-      <button disabled id="solveSlot1">Alt+Z</button>
-      <select id="slot1" aria-label="Model for Alt+Z"></select>
+      <div><strong>Slot 1</strong> <kbd id="shortcut1"></kbd><small id="model1">No model selected</small></div>
+      <button class="primary" id="solveSlot1" aria-label="Solve with slot 1" disabled>Solve</button>
     </div>
     <div class="slot-row">
-      <button disabled id="solveSlot2" style="background-color: #9334a8;">Alt+X</button>
-      <select id="slot2" aria-label="Model for Alt+X"></select>
+      <div><strong>Slot 2</strong> <kbd id="shortcut2"></kbd><small id="model2">No model selected</small></div>
+      <button class="primary" id="solveSlot2" aria-label="Solve with slot 2" disabled>Solve</button>
     </div>
     <div class="slot-row">
-      <button disabled id="solveSlot3" style="background-color: #10a37f;">Alt+C</button>
-      <select id="slot3" aria-label="Model for Alt+C"></select>
+      <div><strong>Slot 3</strong> <kbd id="shortcut3"></kbd><small id="model3">No model selected</small></div>
+      <button class="primary" id="solveSlot3" aria-label="Solve with slot 3" disabled>Solve</button>
     </div>
+    <details>
+      <summary>Audio or video context</summary>
+      <label class="field">Transcript or notes
+        <textarea id="mediaContext" maxlength="6000" rows="3"></textarea>
+      </label>
+      <small>Sent with a Solve button only. No audio is recorded.</small>
+    </details>
+    <div id="solveStatus" class="status" role="status"></div>
+  </main>
 
-    <div id="solveStatus" role="status" aria-live="polite"></div>
-    <button id="refreshBtn" style="background-color: #666; margin-top: 8px;">Refresh model list</button>
-    <div id="modelStatus" role="status" aria-live="polite"></div>
-    <div id="status">Settings saved!</div>
-  </div>
+  <main id="settings-view" style="display: none">
+    <section aria-labelledby="providers">
+      <h2 id="providers">API providers</h2>
+      <label class="field">Gemini API key
+        <input type="password" id="apiKey" autocomplete="off">
+      </label>
+      <label class="field">OpenAI or compatible API key
+        <input type="password" id="openaiApiKey" autocomplete="off">
+      </label>
+      <details id="customEndpoint">
+        <summary>Custom OpenAI-compatible server</summary>
+        <label class="field">API base URL (include /v1)
+          <input type="url" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
+        </label>
+        <small>Use HTTPS for remote servers. HTTP sends your key and screenshots without encryption.</small>
+      </details>
+      <button class="primary" id="saveBtn">Save keys &amp; load models</button>
+    </section>
+
+    <section aria-labelledby="models">
+      <h2 id="models">Model slots</h2>
+      <label class="field">Slot 1 <select id="slot1" disabled></select></label>
+      <label class="field">Slot 2 <select id="slot2" disabled></select></label>
+      <label class="field">Slot 3 <select id="slot3" disabled></select></label>
+      <button id="refreshBtn" disabled>Refresh model list</button>
+      <div id="modelStatus" class="status" role="status"></div>
+      <small>Choose a model that accepts images. Availability in the list depends on your provider and key.</small>
+    </section>
+
+    <label class="field">Answer display
+      <select id="displayMode">
+        <option value="normal">Answer panel</option>
+        <option value="stealth">Compact corner indicator</option>
+      </select>
+    </label>
+  </main>
 
   <script src="models.js"></script>
   <script src="popup.js"></script>
 </body>
-
 </html>

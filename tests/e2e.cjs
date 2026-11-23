@@ -1,4 +1,5 @@
-// Run with E2E_API_KEY, E2E_CHROME_PATH and playwright-core installed.
+// Run with E2E_API_KEY, E2E_CHROME_PATH, E2E_BASE_URL, E2E_MODEL_ID,
+// E2E_SECOND_MODEL_ID and playwright-core installed.
 // This test grants capture/API permissions in a temporary extension copy.
 // It does not validate the toolbar, native permission prompt or OS shortcuts.
 const { chromium }=require('playwright-core');
@@ -10,7 +11,9 @@ for(const file of ['background.js','content.js','models.js','popup.js','popup.ht
 const manifest=JSON.parse(fs.readFileSync(path.join(repo,'manifest.json')));
 manifest.host_permissions.push('<all_urls>');
 fs.writeFileSync(path.join(repo,'manifest.json'),JSON.stringify(manifest));
-if(!process.env.E2E_API_KEY || !process.env.E2E_CHROME_PATH) throw new Error('Set E2E_API_KEY and E2E_CHROME_PATH');
+for (const key of ['E2E_API_KEY', 'E2E_CHROME_PATH', 'E2E_BASE_URL', 'E2E_MODEL_ID', 'E2E_SECOND_MODEL_ID']) {
+  if (!process.env[key]) throw new Error(`Set ${key}`);
+}
 const artifacts=fs.mkdtempSync(os.tmpdir()+'/kahoot-e2e-results-');
 (async()=>{
 const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html><head><meta charset="UTF-8"><title>Kahoot E2E Quiz</title><style>body{margin:0;background:#35136b;color:white;font:32px Arial;text-align:center}h1{padding:45px;font-size:52px}.answers{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:30px}.option{padding:50px;font-size:42px}.red{background:#e21b3c}.blue{background:#1368ce}.yellow{background:#d89e00}.green{background:#26890c}</style></head><body><h1>What is 2 + 2?</h1><div class="answers"><div class="option red">▲ 3</div><div class="option blue">◆ 4</div><div class="option yellow">● 5</div><div class="option green">■ 6</div></div></body></html>`);});
@@ -23,15 +26,15 @@ worker.on('console',m=>console.log('WORKER:',m.text()));
 const quiz=ctx.pages()[0];quiz.on('console',m=>console.log('PAGE:',m.text()));await quiz.goto(`http://127.0.0.1:${server.address().port}/`);await quiz.bringToFront();
 // Render the actual settings document in an extension tab for form automation.
 const popup=await ctx.newPage();await popup.goto(`chrome-extension://${id}/popup.html`);console.log('Popup URL',popup.url());
-await popup.locator('#toggleViewBtn').click();await popup.screenshot({path:path.join(artifacts,'settings.png')});await popup.locator('#openaiBaseUrl').fill('http://100.81.152.90:20128/v1');await popup.locator('#openaiApiKey').fill(process.env.E2E_API_KEY);
+await popup.locator('#toggleViewBtn').click();await popup.screenshot({path:path.join(artifacts,'settings.png')});await popup.locator('#customEndpoint summary').click();await popup.locator('#openaiBaseUrl').fill(process.env.E2E_BASE_URL);await popup.locator('#openaiApiKey').fill(process.env.E2E_API_KEY);
 // The temporary manifest pre-grants access; this does not test the native prompt.
 await popup.locator('#saveBtn').click();
-await popup.locator('#modelStatus').filter({hasText:/models available/}).waitFor({timeout:30000});console.log('Settings status',await popup.locator('#modelStatus').textContent());
+await popup.locator('#modelStatus').filter({hasText:/models? available/}).waitFor({timeout:30000});console.log('Settings status',await popup.locator('#modelStatus').textContent());
 if(await popup.locator('#slot1').inputValue()!=='')throw new Error('Model was automatically forced');
-await popup.locator('#slot1').selectOption('openai:oc/fledge-alpha-free');
-await popup.locator('#refreshBtn').click();await popup.locator('#modelStatus').filter({hasText:/models available/}).waitFor();
-if(await popup.locator('#slot1').inputValue()!=='openai:oc/fledge-alpha-free')throw new Error('Refresh changed user selection');
-await popup.locator('#slot1').selectOption('openai:oc/space-bunny-free');
+await popup.locator('#slot1').selectOption(`openai:${process.env.E2E_MODEL_ID}`);
+await popup.locator('#refreshBtn').click();await popup.locator('#modelStatus').filter({hasText:/models? available/}).waitFor();
+if(await popup.locator('#slot1').inputValue()!==`openai:${process.env.E2E_MODEL_ID}`)throw new Error('Refresh changed user selection');
+await popup.locator('#slot1').selectOption(`openai:${process.env.E2E_SECOND_MODEL_ID}`);
 await popup.locator('#displayMode').selectOption('stealth');
 console.log('User model switch and refresh persistence PASS');
 console.log('Persisted selection',await worker.evaluate(async()=>{const s=await chrome.storage.local.get(['slot1','openaiBaseUrl','openaiApiKey']);return {slot1:s.slot1,baseUrl:s.openaiBaseUrl,keySaved:!!s.openaiApiKey};}));

@@ -2,8 +2,8 @@ importScripts('models.js');
 
 const SLOTS = ['slot1', 'slot2', 'slot3'];
 
-async function getKeys() {
-    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl']);
+async function getProviderSettings(slot) {
+    return chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl', ...(slot ? [slot] : [])]);
 }
 
 function messageTab(tabId, message) {
@@ -11,9 +11,9 @@ function messageTab(tabId, message) {
 }
 
 // Only use an explicit user selection; never silently choose a paid model.
-async function resolveSlotModel(slot) {
+function resolveSlotModel(slot, settings) {
     if (!SLOTS.includes(slot)) throw new Error('Invalid model slot.');
-    const stored = (await chrome.storage.local.get(slot))[slot];
+    const stored = settings[slot];
     if (stored?.id && ['openai', 'gemini'].includes(stored.provider)) return stored;
     throw new Error('Select a model for this slot in settings first.');
 }
@@ -65,8 +65,8 @@ const solveQuestion = async (slot, mediaContext = '', tab, acknowledge = () => {
         prepared = (await prepareCapture(tab.id, requestId)) === true;
         if (!prepared) throw new Error('Reload the quiz tab to connect the extension.');
 
-        const model = await resolveSlotModel(slot);
-        const keys = await getKeys();
+        const keys = await getProviderSettings(slot);
+        const model = resolveSlotModel(slot, keys);
         const apiKey = model.provider === 'openai' ? keys.openaiApiKey : keys.geminiApiKey;
         if (!apiKey) throw new Error(`Set the ${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key first.`);
 
@@ -150,7 +150,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         void solveQuestion(request.slot || SLOTS[0], request.mediaContext || '', undefined, sendResponse);
         return true;
     } else if (request.action === "list_models") {
-        getKeys()
+        getProviderSettings()
             .then(fetchAvailableModels)
             .then(sendResponse)
             .catch((e) => sendResponse({ models: [], errors: [e.message] }));
@@ -196,11 +196,11 @@ function buildPrompt(mediaContext = '') {
 }
 
 async function analyzeImage(apiKey, base64Image, model, mediaContext = '') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
     const result = await apiFetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
             contents: [{
                 parts: [
@@ -271,27 +271,39 @@ function validateStructuredAnswer(result) {
 }
 
 async function analyzeImageOpenAI(apiKey, base64Image, model, baseUrl, mediaContext = '') {
-    const result = await apiFetch(`${normalizeOpenAIBaseUrl(baseUrl)}/chat/completions`, {
+    const base = normalizeOpenAIBaseUrl(baseUrl);
+    const imageUrl = `data:image/png;base64,${base64Image}`;
+    const prompt = buildPrompt(mediaContext);
+    const official = base === DEFAULT_OPENAI_BASE_URL;
+    const endpoint = official ? 'responses' : 'chat/completions';
+    const body = official
+        ? { model, store: false, input: [{ role: 'user', content: [
+            { type: 'input_text', text: prompt },
+            { type: 'input_image', image_url: imageUrl, detail: 'auto' }
+        ] }] }
+        : { model, messages: [{ role: 'user', content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } }
+        ] }] };
+
+    const result = await apiFetch(`${base}/${endpoint}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-            model: model,
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: buildPrompt(mediaContext) },
-                        { type: "image_url", image_url: { url: `data:image/png;base64,${base64Image}` } }
-                    ]
-                }
-            ]
-        })
+        body: JSON.stringify(body)
     }, 'OpenAI answer request');
 
-    if (result.choices?.[0]?.finish_reason === 'length') throw new Error('The model response was truncated. Try another model.');
-    const text = result.choices?.[0]?.message?.content;
-    return parseResponse(text);
+    if (official) {
+        if (result.status === 'incomplete') throw new Error('OpenAI returned an incomplete answer. Try another model.');
+        const parts = (result.output || []).filter(item => item.type === 'message').flatMap(item => item.content || []);
+        if (parts.some(part => part.type === 'refusal')) throw new Error('The model declined to answer.');
+        return parseResponse(parts.filter(part => part.type === 'output_text').map(part => part.text).join(''));
+    }
+
+    const choice = result.choices?.[0];
+    if (choice?.finish_reason === 'length') throw new Error('The model response was truncated. Try another model.');
+    if (choice?.message?.refusal || choice?.finish_reason === 'content_filter') throw new Error('The model declined to answer.');
+    return parseResponse(choice?.message?.content);
 }

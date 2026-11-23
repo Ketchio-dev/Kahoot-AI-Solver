@@ -63,29 +63,34 @@ async function main() {
     const popup = await browser.newPage();
     await popup.goto(popupUrl);
     await popup.locator('#toggleViewBtn').click();
+    await popup.locator('#customEndpoint summary').click();
     await popup.locator('#openaiBaseUrl').fill(`${origin}/v1`);
     await popup.locator('#openaiApiKey').fill('local-test-key');
     await popup.locator('#saveBtn').click();
-    await popup.getByText('1 models available', { exact: true }).waitFor();
+    await popup.getByText('1 model available', { exact: true }).waitFor();
     assert.equal(await popup.locator('#solveSlot1').isDisabled(), true);
     await popup.locator('#slot1').selectOption('openai:local-vision');
-    await popup.locator('#solveSlot1:enabled').waitFor();
-    await popup.reload();
     await popup.locator('#toggleViewBtn').click();
     await popup.locator('#solveSlot1:enabled').waitFor();
+    const initialRequests = modelRequests;
+    await popup.reload();
+    await popup.locator('#solveSlot1:enabled').waitFor();
+    assert.equal(modelRequests, initialRequests);
+    assert.match(await popup.locator('#model1').textContent(), /local-vision/);
+    assert.ok(await popup.locator('#shortcut1').textContent());
 
-    // Verify the actual popup handler sends a request even during model refresh.
+    // The saved slot remains runnable while the settings list is refreshing.
     holdModels = true;
-    const beforeRefresh = modelRequests;
-    await popup.locator('#refreshBtn').click();
+    await popup.locator('#toggleViewBtn').click();
     await popup.getByText('Loading models…', { exact: true }).waitFor();
+    await popup.locator('#toggleViewBtn').click();
     assert.equal(await popup.locator('#solveSlot1').isEnabled(), true);
     await quiz.bringToFront();
     await popup.locator('#solveSlot1').evaluate(button => button.click());
     const indicator = quiz.locator('#kahoot-stealth-indicator');
     await indicator.filter({ hasText: '◆ BLUE' }).waitFor();
     assert.equal(solves.length, 1);
-    assert.ok(modelRequests > beforeRefresh);
+    assert.ok(modelRequests > initialRequests);
     const screenshot = solves[0].messages[0].content.find(part => part.type === 'image_url');
     assert.match(screenshot.image_url.url, /^data:image\/png;base64,iVBORw0KGgo/);
 
@@ -98,7 +103,6 @@ async function main() {
     // A capture failure reaches the popup before it closes or makes an API call.
     const secondPopup = await browser.newPage();
     await secondPopup.goto(popupUrl);
-    await secondPopup.locator('#toggleViewBtn').click();
     await secondPopup.locator('#solveSlot1:enabled').waitFor();
     await quiz.goto('chrome://version/');
     await quiz.bringToFront();

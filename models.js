@@ -1,4 +1,4 @@
-// Live model discovery. No model IDs are hardcoded anywhere in this extension.
+// Live model discovery. Model selection is stored per shortcut slot.
 
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';
@@ -15,7 +15,7 @@ async function apiFetch(url, options = {}, operation = 'API request') {
     // Keep both the request and response body within the worker's time budget.
     const signal = AbortSignal.timeout(25000);
     try {
-        const response = await fetch(url, { ...options, signal });
+        const response = await fetch(url, { ...options, redirect: 'error', signal });
         if (!response.ok) {
             const hints = {
                 400: 'Check the API URL and use a model that accepts images.',
@@ -47,15 +47,16 @@ async function fetchGeminiModels(apiKey) {
     let pageToken = '';
 
     do {
-        const url = `${GEMINI_MODELS_URL}?pageSize=200&key=${encodeURIComponent(apiKey)}${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
-        const data = await apiFetch(url, {}, 'Gemini model list');
+        const url = `${GEMINI_MODELS_URL}?pageSize=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+        const data = await apiFetch(url, { headers: { 'x-goog-api-key': apiKey } }, 'Gemini model list');
         for (const model of data.models || []) {
             const methods = model.supportedGenerationMethods || [];
             if (typeof model.name !== 'string' || !methods.includes('generateContent')) continue;
             models.push({
                 provider: 'gemini',
                 id: model.name.replace(/^models\//, ''),
-                label: model.displayName || model.name.replace(/^models\//, '')
+                label: model.displayName || model.name.replace(/^models\//, ''),
+                verifiedVision: false
             });
         }
         pageToken = data.nextPageToken || '';
@@ -69,7 +70,7 @@ async function fetchGeminiModels(apiKey) {
 const OPENAI_NON_CHAT_PATTERNS = [
     /whisper/, /^tts-/, /^dall-e/, /embedding/, /moderation/, /^omni-moderation/,
     /^text-(davinci|curie|babbage|ada)/, /^davinci/, /^babbage/, /^codex-mini/,
-    /audio/, /realtime/, /transcribe/, /^sora/, /image/, /^gpt-3\.5/
+    /audio/, /realtime/, /transcribe/, /^sora/, /^gpt-image/, /^gpt-3\.5/
 ];
 
 function isLikelyVisionChatModel(id) {
@@ -77,17 +78,19 @@ function isLikelyVisionChatModel(id) {
 }
 
 async function fetchOpenAIModels(apiKey, baseUrl) {
-    const data = await apiFetch(`${normalizeOpenAIBaseUrl(baseUrl)}/models`, {
+    const url = normalizeOpenAIBaseUrl(baseUrl);
+    const official = url === DEFAULT_OPENAI_BASE_URL;
+    const data = await apiFetch(`${url}/models`, {
         headers: { 'Authorization': `Bearer ${apiKey}` }
     }, 'OpenAI model list');
-    return (data.data || [])
-        .filter((model) => typeof model.id === 'string' && (model.capabilities?.vision === true ||
-            (model.capabilities?.vision !== false && isLikelyVisionChatModel(model.id))))
-        .map((model) => ({
-            provider: 'openai',
-            id: model.id,
-            label: model.id
-        }));
+    const models = [];
+    for (const model of data.data || []) {
+        if (typeof model.id !== 'string' || !model.id || model.capabilities?.vision === false) continue;
+        const verifiedVision = model.capabilities?.vision === true;
+        if (!verifiedVision && official && !isLikelyVisionChatModel(model.id)) continue;
+        models.push({ provider: 'openai', id: model.id, label: model.id, verifiedVision });
+    }
+    return models;
 }
 
 // Returns every model reachable with the keys currently stored, sorted by id.

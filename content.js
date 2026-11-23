@@ -1,5 +1,4 @@
-// All on-page feedback is deliberately small and corner-anchored so it stays
-// unobtrusive on a shared screen.
+// Render status and answer suggestions in the bottom-right corner.
 
 const ANSWER_STYLES = {
     red: { color: '#C0392B', icon: '▲' },
@@ -27,6 +26,7 @@ function createIndicator() {
     removeIndicator();
     const indicator = document.createElement('div');
     indicator.id = INDICATOR_ID;
+    indicator.setAttribute('role', 'status');
     indicator.className = displayMode === 'stealth' ? 'kahoot-stealth-indicator' : 'kahoot-normal-panel';
     document.body.appendChild(indicator);
     return indicator;
@@ -70,11 +70,11 @@ function showAnswer(answer) {
 function showError(message) {
     console.warn('Kahoot AI error:', message);
     const indicator = createIndicator();
-    indicator.style.backgroundColor = '#000000';
-    indicator.textContent = displayMode === 'stealth' ? '!' : `Error: ${message}`;
+    indicator.className = 'kahoot-normal-panel';
+    indicator.textContent = `Error: ${message}`;
     indicator.title = message;
 
-    indicatorTimer = setTimeout(removeIndicator, 4000);
+    indicatorTimer = setTimeout(removeIndicator, 8000);
 }
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
