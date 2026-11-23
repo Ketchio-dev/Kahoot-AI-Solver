@@ -148,18 +148,19 @@
     </div>
     <label>Choose a model for each shortcut:</label>
     <div class="slot-row">
-      <button id="solveSlot1">Alt+Z</button>
+      <button disabled id="solveSlot1">Alt+Z</button>
       <select id="slot1" aria-label="Model for Alt+Z"></select>
     </div>
     <div class="slot-row">
-      <button id="solveSlot2" style="background-color: #9334a8;">Alt+X</button>
+      <button disabled id="solveSlot2" style="background-color: #9334a8;">Alt+X</button>
       <select id="slot2" aria-label="Model for Alt+X"></select>
     </div>
     <div class="slot-row">
-      <button id="solveSlot3" style="background-color: #10a37f;">Alt+C</button>
+      <button disabled id="solveSlot3" style="background-color: #10a37f;">Alt+C</button>
       <select id="slot3" aria-label="Model for Alt+C"></select>
     </div>
 
+    <div id="solveStatus" role="status" aria-live="polite"></div>
     <button id="refreshBtn" style="background-color: #666; margin-top: 8px;">Refresh model list</button>
     <div id="modelStatus" role="status" aria-live="polite"></div>
     <div id="status">Settings saved!</div>

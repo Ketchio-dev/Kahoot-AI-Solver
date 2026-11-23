@@ -41,7 +41,9 @@ Get keys from [Google AI Studio](https://aistudio.google.com/apikey) and the [Op
 | `Alt+X` | Solve with model slot 2 |
 | `Alt+C` | Solve with model slot 3 |
 
-You can also press the buttons next to each dropdown in the popup.
+You can also press the buttons next to each dropdown in the popup. If a shortcut does nothing, check its assignment at `chrome://extensions/shortcuts` and try the matching popup button. On macOS, Alt means Option.
+
+The captured tab must show the question and answer choices. If a live player tab only shows colored buttons, the host can enable **Show questions & answers on participants’ devices** in Kahoot's game settings. See [Kahoot's setup guide](https://support.kahoot.com/hc/en-us/articles/115003197928-How-to-enable-See-questions-on-participant-s-screen-in-Kahoot-live-games).
 
 Choose **Normal** or **Stealth** in the settings' Answer display dropdown. Normal (the default) shows a readable answer panel for 15 seconds. Stealth uses a small corner shape for single-choice answers and a compact text box for richer answers (8 seconds). Compact does not mean invisible: both modes can appear in screenshots or screen sharing. Neither mode clicks or submits answers.
 
@@ -60,7 +62,7 @@ In Stealth mode, errors surface as a black `!` dot; Normal mode shows the error 
 
 Holding a shortcut down will not stack requests: while one solve is in flight, further triggers are ignored so you are not billed for duplicate calls.
 
-In the prepared v1.4.1 update, API requests time out after 25 seconds, before Chrome's service-worker fetch deadline. If the worker is interrupted, the page clears its pending state with an error after 30 seconds. Slow models may need another attempt or a faster model; requests are never retried automatically.
+API requests in the unpacked build time out after 25 seconds, including reading the response. If the worker is interrupted, the page clears its pending state with an error after 30 seconds. Slow models may need another attempt or a faster model; requests are never retried automatically.
 
 ## Audio and video questions
 
@@ -75,7 +77,7 @@ Direct media support requires more than a model capability flag: the chosen serv
 - `GET https://generativelanguage.googleapis.com/v1beta/models` — paginated, keeping only models that advertise `generateContent`
 - `GET {OpenAI API URL}/models` — explicit `capabilities.vision` metadata takes priority when present; otherwise speech, image-generation, embedding, moderation and legacy completion models are filtered out by id pattern
 
-Results are merged into a single provider-tagged list. Each slot starts with **Choose a model…** and requires an explicit selection. No model is automatically assigned. Refresh preserves your selection when it is available; if it disappears, choose another model rather than silently switching to a different paid model. Nothing is cached between popup openings — hitting **Refresh model list** always re-queries the APIs, so newly released models appear without an extension update.
+Results are merged into a single provider-tagged list. Each slot starts with **Choose a model…** and requires an explicit selection. No model is automatically assigned. Saved slots can run while model discovery is in progress. If a refresh does not list a saved model, the dropdown labels it **(saved)**. If the provider rejects it, select a different image-capable model. **Refresh model list** re-queries the configured APIs.
 
 ## Files
 
@@ -99,13 +101,21 @@ node --test tests/regression.cjs tests/landing.cjs
 
 `tests/landing.cjs` statically checks the `docs/` site (links, anchors, install URL, shortcuts against the manifest, icon sizes). It needs no network access or API keys. The regression tests cover response validation, custom API routing and model filtering, concurrent solve protection, and indicator timer cleanup. They do not replace testing the unpacked extension in Chrome.
 
+`tests/local-e2e.cjs` runs the unpacked extension in Chrome with a local mock API and no real credentials. It covers model discovery, saved slots, the popup handler during refresh, screenshot capture, answer display, provider errors, and restricted tabs. Install `playwright-core` in the test environment and run:
+
+```bash
+E2E_CHROME_PATH=/path/to/chrome node tests/local-e2e.cjs
+```
+
+The test pre-grants permissions in a temporary extension copy. Use a physical shortcut or the toolbar in Chrome to check browser-level activation and permission prompts.
+
 `tests/e2e.cjs` creates a local Kahoot-style quiz and tests model discovery, explicit selection, refresh persistence, model switching, screenshot capture, real API calls and answer indicators for arithmetic, science, geography, multiple correct answers, typed text, ordering, numeric answers and transcript-assisted answers across both display modes. Install `playwright-core` in your test environment and run with `E2E_API_KEY` and `E2E_CHROME_PATH` (an extension-capable Chrome for Testing binary). It uses the test API at `http://100.81.152.90:20128/v1`. Credentials are supplied only by environment variable and temporary profiles are removed afterward. The test pre-grants permissions in a temporary extension copy and invokes the solve entry point directly. It was not run for this release preparation.
 
 Manual checks of the prepared v1.4.1 package in Ego Lite on macOS used only local synthetic quizzes and the existing Muse test server. They covered native custom-server permission approval, API-key/settings persistence, explicit model selection, refresh preservation, all three Option shortcuts, the actual toolbar popup solve button, Normal/Stealth display, single-choice, multiple-choice, typed, numeric and ordered answers, missing-model errors and resting product icons after success/error. The first native request left a pending indicator behind; the timeout and pending-state recovery were then added and subsequent sample solves completed. The initial interruption's cause was not confirmed. Timeout recovery is covered by regression tests, not a deliberately stalled native API test. These checks do not establish accuracy on real Kahoot games or compatibility with every provider.
 
 ## Prepare an extension package
 
-**v1.4.1 has been uploaded to the existing Chrome Web Store item and submitted for review.** The console currently shows it as pending review; the published store version remains **v1.4.0**. Automatic publication is disabled, so approval will leave the update staged for a separate publish action. Staged updates expire 30 days after approval.
+**v1.4.0 is the published Chrome Web Store version as of November 23, 2026.** Use the unpacked build to try v1.4.2. The v1.4.1 package was previously submitted for review.
 
 ```bash
 python3 tools/package-extension.py

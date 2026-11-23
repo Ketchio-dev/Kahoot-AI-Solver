@@ -15,6 +15,7 @@ const ANSWER_STYLES = {
 const INDICATOR_ID = 'kahoot-stealth-indicator';
 let indicatorTimer;
 let displayMode = 'normal';
+let activeRequest;
 
 function removeIndicator() {
     clearTimeout(indicatorTimer);
@@ -76,17 +77,27 @@ function showError(message) {
     indicatorTimer = setTimeout(removeIndicator, 4000);
 }
 
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+    if (request.action === 'prepare_capture') {
+        activeRequest = request.requestId;
+        removeIndicator();
+        sendResponse(true);
+        return;
+    }
+    if (request.requestId !== activeRequest) return;
+
     // Messages from older workers/tests without a mode retain compact feedback.
     displayMode = request.mode === 'normal' ? 'normal' : 'stealth';
     if (request.action === 'show_processing') {
         showProcessing();
+        sendResponse?.(true);
     } else if (request.action === 'highlight_answer') {
         if (request.answer) {
             showAnswer(request.answer);
         } else {
             showError('The AI could not identify the answer.');
         }
+        sendResponse?.(true);
     } else if (request.action === 'error') {
         showError(request.message);
     }

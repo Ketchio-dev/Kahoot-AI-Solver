@@ -9,81 +9,71 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshBtn');
   const status = document.getElementById('status');
   const modelStatus = document.getElementById('modelStatus');
+  const solveStatus = document.getElementById('solveStatus');
+  let listedModels = [];
+  let solving = false;
 
-  chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl', 'displayMode'], (result) => {
+  function updateSolveButtons() {
+    SLOTS.forEach((slot, index) => {
+      document.getElementById(`solveSlot${index + 1}`).disabled =
+        solving || !document.getElementById(slot).value;
+    });
+  }
+
+  function renderSlots(saved) {
+    for (const slot of SLOTS) {
+      const select = document.getElementById(slot);
+      select.replaceChildren();
+      const current = saved[slot];
+      const models = listedModels.slice();
+      if (current && !models.some(model => model.provider === current.provider && model.id === current.id)) {
+        models.push({ ...current, label: `${current.id} (saved)` });
+      }
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = models.length ? 'Choose a model…' : 'No models available';
+      select.appendChild(placeholder);
+      for (const model of models) {
+        const option = document.createElement('option');
+        option.value = `${model.provider}:${model.id}`;
+        option.textContent = `${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} · ${model.label}`;
+        select.appendChild(option);
+      }
+      select.value = current ? `${current.provider}:${current.id}` : '';
+      select.disabled = !models.length;
+    }
+    updateSolveButtons();
+  }
+
+  chrome.storage.local.get(['geminiApiKey', 'openaiApiKey', 'openaiBaseUrl', 'displayMode', ...SLOTS], (result) => {
     if (result.geminiApiKey) apiKeyInput.value = result.geminiApiKey;
     if (result.openaiApiKey) openaiInput.value = result.openaiApiKey;
     baseUrlInput.value = result.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
     document.getElementById('displayMode').value = result.displayMode === 'stealth' ? 'stealth' : 'normal';
-    loadModels();
+    renderSlots(result);
+    if (result.geminiApiKey || result.openaiApiKey) loadModels();
+    else modelStatus.textContent = 'Save an API key to load models.';
   });
 
   function loadModels() {
     const generation = ++loadGeneration;
-    modelStatus.textContent = 'Loading models...';
-    SLOTS.forEach((slot, index) => {
-      document.getElementById(slot).disabled = true;
-      document.getElementById(`solveSlot${index + 1}`).disabled = true;
-    });
+    modelStatus.textContent = 'Loading models…';
     chrome.runtime.sendMessage({ action: 'list_models' }, (response) => {
+      const connectionError = chrome.runtime.lastError;
       if (generation !== loadGeneration) return;
-      if (chrome.runtime.lastError) {
-        modelStatus.textContent = chrome.runtime.lastError.message;
+      if (connectionError || !response) {
+        modelStatus.textContent = 'Could not load models. Check the extension and try Refresh model list.';
         return;
       }
-      const models = (response && response.models) || [];
-      const errors = (response && response.errors) || [];
-
+      const { models, errors } = response;
       chrome.storage.local.get(SLOTS, (saved) => {
         if (generation !== loadGeneration) return;
-
-        for (const slot of SLOTS) {
-          const select = document.getElementById(slot);
-          select.innerHTML = '';
-          document.getElementById(`solveSlot${SLOTS.indexOf(slot) + 1}`).disabled = true;
-
-          if (!models.length) {
-            const option = document.createElement('option');
-            option.textContent = 'No models available';
-            select.appendChild(option);
-            select.disabled = true;
-            continue;
-          }
-
-          select.disabled = false;
-          const placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'Choose a model…';
-          select.appendChild(placeholder);
-          for (const model of models) {
-            const option = document.createElement('option');
-            option.value = `${model.provider}:${model.id}`;
-            option.textContent = `${model.provider === 'openai' ? 'OpenAI' : 'Gemini'} · ${model.label}`;
-            select.appendChild(option);
-          }
-
-          const current = saved[slot];
-          if (current) select.value = `${current.provider}:${current.id}`;
-          if (!select.value) select.value = '';
-          const solveBtn = document.getElementById(`solveSlot${SLOTS.indexOf(slot) + 1}`);
-          solveBtn.disabled = !select.value;
-          select.onchange = async () => {
-            solveBtn.disabled = true;
-            if (!select.value) {
-              await chrome.storage.local.remove(slot);
-              return;
-            }
-            const [provider, ...rest] = select.value.split(':');
-            await chrome.storage.local.set({ [slot]: { provider, id: rest.join(':') } });
-            solveBtn.disabled = false;
-          };
-        }
-
-        if (!models.length) {
-          modelStatus.textContent = errors.length ? errors.join(' | ') : 'Save an API key to load models.';
-        } else {
-          modelStatus.textContent = `${models.length} models available${errors.length ? ` (${errors.join(' | ')})` : ''}`;
-        }
+        listedModels = models;
+        renderSlots(saved);
+        const summary = models.length ? `${models.length} models available` : '';
+        modelStatus.textContent = [summary, ...errors].filter(Boolean).join(' · ') ||
+          'No image-capable models found. Check your API settings.';
       });
     });
   }
@@ -126,9 +116,42 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshBtn.addEventListener('click', loadModels);
 
   SLOTS.forEach((slot, index) => {
-    document.getElementById(`solveSlot${index + 1}`).addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'manual_solve', slot, mediaContext: document.getElementById('mediaContext').value.trim() });
-      window.close();
+    const select = document.getElementById(slot);
+    select.addEventListener('change', async () => {
+      const selected = select.value;
+      const solveBtn = document.getElementById(`solveSlot${index + 1}`);
+      solveBtn.disabled = true;
+      try {
+        if (selected) {
+          const separator = selected.indexOf(':');
+          const provider = selected.slice(0, separator);
+          const id = selected.slice(separator + 1);
+          await chrome.storage.local.set({ [slot]: { provider, id } });
+        } else {
+          await chrome.storage.local.remove(slot);
+        }
+        if (select.value === selected) solveBtn.disabled = solving || !selected;
+      } catch {
+        solveStatus.textContent = 'Could not save the model selection. Reopen the popup and try again.';
+      }
+    });
+
+    document.getElementById(`solveSlot${index + 1}`).addEventListener('click', async () => {
+      if (solving) return;
+      solving = true;
+      updateSolveButtons();
+      solveStatus.textContent = 'Capturing the active tab…';
+      try {
+        const response = await chrome.runtime.sendMessage({
+          action: 'manual_solve', slot, mediaContext: document.getElementById('mediaContext').value.trim()
+        });
+        if (!response?.ok) throw new Error(response?.error || 'The extension did not start the request.');
+        window.close();
+      } catch (error) {
+        solveStatus.textContent = error.message;
+        solving = false;
+        updateSolveButtons();
+      }
     });
   });
 

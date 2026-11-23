@@ -2,16 +2,17 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { randomUUID } = require('node:crypto');
 
 function context(overrides = {}) {
   const chrome = {
     storage: { local: { get: async () => ({}), set: async () => {} } },
-    tabs: { query: async () => [{ id: 1, windowId: 7 }], sendMessage: async () => {}, captureVisibleTab: async () => 'data:image/png;base64,image' },
+    tabs: { query: async () => [{ id: 1, windowId: 7 }], sendMessage: async () => true, captureVisibleTab: async () => 'data:image/png;base64,image' },
     action: { setIcon: () => {} },
     commands: { onCommand: { addListener: () => {} } },
     runtime: { onInstalled: { addListener(fn) { this.listener = fn; } }, onMessage: { addListener: () => {} } }
   };
-  const ctx = vm.createContext({ chrome, console, URL, AbortSignal, setTimeout: () => {}, clearTimeout: () => {}, importScripts: () => {}, ...overrides });
+  const ctx = vm.createContext({ chrome, console, URL, AbortSignal, crypto: { randomUUID }, setTimeout: () => {}, clearTimeout: () => {}, importScripts: () => {}, ...overrides });
   vm.runInContext(fs.readFileSync('models.js', 'utf8'), ctx);
   vm.runInContext(fs.readFileSync('background.js', 'utf8'), ctx);
   if (!overrides.OffscreenCanvas) vm.runInContext('drawIcon = () => ({})', ctx);
@@ -207,7 +208,7 @@ test('install and success/error feedback resets restore the packaged product ico
     }
   });
   ctx.chrome.action.setIcon = icon => icons.push(JSON.parse(JSON.stringify(icon)));
-  ctx.chrome.tabs.sendMessage = async (_, message) => { messages.push(message); };
+  ctx.chrome.tabs.sendMessage = async (_, message) => { messages.push(message); return true; };
   const packagedIcon = { path: { 16: 'icon16.png', 48: 'icon48.png', 128: 'icon128.png' } };
 
   ctx.chrome.runtime.onInstalled.listener();
@@ -312,4 +313,62 @@ test('old result timers are cancelled when a new indicator is displayed', () => 
   listener({ action: 'highlight_answer', mode: 'stealth', answer: { type: 'text', text: '<script>unsafe</script>' } });
   assert.equal(current.className, 'kahoot-stealth-indicator');
   assert.equal(current.textContent, '<script>unsafe</script>');
+});
+
+test('switching tabs during capture prevents sending the screenshot to the provider', async () => {
+  const ctx = context({ console: { warn() {} } });
+  let captured = false;
+  const messages = [];
+  ctx.chrome.tabs.query = async () => [{ id: captured ? 2 : 1, windowId: 7 }];
+  ctx.chrome.tabs.captureVisibleTab = async () => {
+    captured = true;
+    return 'data:image/png;base64,image';
+  };
+  ctx.chrome.tabs.sendMessage = async (_, message) => {
+    messages.push(message);
+    return true;
+  };
+  vm.runInContext('resolveSlotModel = async () => ({provider:"openai",id:"vision"}); getKeys = async () => ({openaiApiKey:"test"});', ctx);
+  ctx.fetch = () => assert.fail('Changed-tab screenshot must not be uploaded');
+  const replies = [];
+  ctx.acknowledge = reply => replies.push(reply);
+  await vm.runInContext('solveQuestion("slot1", "", {id:1, windowId:7}, acknowledge)', ctx);
+  assert.equal(captured, true);
+  assert.match(replies[0].error, /active tab changed/);
+  assert.deepEqual(messages.map(({ action }) => action), ['prepare_capture', 'error']);
+});
+
+test('a new document ignores feedback for a capture it did not prepare', () => {
+  let listener;
+  const ctx = vm.createContext({
+    chrome: { runtime: { onMessage: { addListener: fn => { listener = fn; } } } },
+    document: { getElementById: () => null, createElement: () => assert.fail('Stale feedback') },
+    clearTimeout() {}
+  });
+  vm.runInContext(fs.readFileSync('content.js', 'utf8'), ctx);
+  listener({ action: 'prepare_capture', requestId: 'current' }, null, () => {});
+  listener({ action: 'highlight_answer', requestId: 'old', answer: 'blue' });
+});
+
+test('Gemini extracts the answer separately from thought parts and rejects truncated results', async () => {
+  const candidate = {
+    finishReason: 'STOP',
+    content: { parts: [{ text: 'reasoning', thought: true }, { text: '{"answer":"blue"}' }] }
+  };
+  const ctx = context({
+    fetch: async () => ({ ok: true, json: async () => ({ candidates: [candidate] }) })
+  });
+  assert.equal(await vm.runInContext('analyzeImage("test", "image", "vision")', ctx), 'blue');
+  candidate.finishReason = 'MAX_TOKENS';
+  await assert.rejects(vm.runInContext('analyzeImage("test", "image", "vision")', ctx), /truncated/);
+});
+
+test('provider errors report the HTTP status without echoing response bodies', async () => {
+  const ctx = context({
+    fetch: async () => ({ ok: false, status: 401, text: () => assert.fail('Sensitive body must stay private') })
+  });
+  await assert.rejects(
+    vm.runInContext('fetchOpenAIModels("secret", "https://example.test/v1")', ctx),
+    /HTTP 401.*Check your API key/
+  );
 });
